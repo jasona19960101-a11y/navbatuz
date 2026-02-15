@@ -4,60 +4,60 @@ const { Telegraf } = require("telegraf");
 const { Pool } = require("pg");
 
 const app = express();
+
 const PORT = process.env.PORT || 10000;
 
-// ENV
+// ENV variables
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const DATABASE_URL = process.env.DATABASE_URL;
 const WEBAPP_URL = process.env.WEBAPP_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// DATABASE
+// PostgreSQL connection
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-// TABLE yaratish
+// Jadval yaratish
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS queue (
       id SERIAL PRIMARY KEY,
-      ticket TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
+    );
   `);
 }
 initDB();
 
-// navbat olish function
-async function getNextTicket() {
-  const result = await pool.query("SELECT COUNT(*) FROM queue");
-  const count = parseInt(result.rows[0].count) + 1;
-  const ticket = "N-" + count.toString().padStart(5, "0");
+// API: navbat olish
+app.get("/api/navbat", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "INSERT INTO queue DEFAULT VALUES RETURNING id"
+    );
 
-  await pool.query("INSERT INTO queue(ticket) VALUES($1)", [ticket]);
-
-  return {
-    ticket,
-    position: count,
-    eta: count * 2,
-  };
-}
-
-// WEBSITE API
-app.get("/api/next", async (req, res) => {
-  const data = await getNextTicket();
-  res.json(data);
+    res.json({
+      success: true,
+      number: result.rows[0].id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.json({
+      success: false,
+    });
+  }
 });
 
-// static
+// static site
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// TELEGRAM BOT
+// Telegram bot
 const bot = new Telegraf(BOT_TOKEN);
 
 bot.start((ctx) => {
@@ -77,7 +77,7 @@ bot.start((ctx) => {
 
 bot.launch();
 
-// SERVER START
+// server start
 app.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
