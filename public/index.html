@@ -6,7 +6,7 @@
   <title>NAVBATUZ</title>
   <style>
     body{margin:0;font-family:Arial,sans-serif;background:#f6f7fb;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px}
-    .card{width:360px;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
+    .card{width:400px;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
     h1{margin:0 0 8px;font-size:20px}
     .muted{color:#666;font-size:13px;margin-bottom:14px}
     label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
@@ -14,6 +14,7 @@
     button{width:100%;padding:12px;border:0;border-radius:10px;font-size:15px;cursor:pointer}
     .btn{background:#5b2cff;color:#fff;margin-top:12px}
     .btn2{background:#111;color:#fff;margin-top:10px}
+    .danger{background:#ff2c55;color:#fff;margin-top:10px}
     .box{margin-top:14px;padding:12px;border-radius:12px;background:#f2f3ff}
     .row{display:flex;justify-content:space-between;margin:6px 0;font-size:14px}
     .big{font-size:22px;font-weight:700}
@@ -42,10 +43,11 @@
       <div class="row"><div>Chipta raqami:</div><div class="big" id="ticketNo">—</div></div>
       <div class="row"><div>Holat:</div><div id="status">—</div></div>
       <div class="row"><div>Oldingizda:</div><div id="ahead">—</div></div>
-      <div class="row"><div>Taxminiy kutish:</div><div id="eta">—</div></div>
+      <div class="row"><div>Kutish vaqti:</div><div id="eta">—</div></div>
+      <div class="row"><div>Kutayotganlar (WAIT):</div><div id="waitCount">—</div></div>
 
       <button class="btn2" id="refreshBtn">Yangilash</button>
-      <button class="btn" id="newBtn" style="background:#ff2c55">Yangi navbat olish</button>
+      <button class="danger" id="newBtn">Yangi navbat olish</button>
     </div>
   </div>
 
@@ -54,10 +56,11 @@
   const ticketBox = document.getElementById("ticketBox");
   const msg = document.getElementById("msg");
 
-  const ticketNoEl = document.getElementById("ticketNo");
+  const ticketNo = document.getElementById("ticketNo");
   const statusEl = document.getElementById("status");
   const aheadEl = document.getElementById("ahead");
   const etaEl = document.getElementById("eta");
+  const waitCountEl = document.getElementById("waitCount");
 
   function showError(t){ msg.innerHTML = `<span class="err">${t}</span>`; }
   function showOk(t){ msg.innerHTML = `<span class="ok">${t}</span>`; }
@@ -72,20 +75,13 @@
     }
   }
 
-  async function api(path){
-    const res = await fetch(path);
+  async function api(path, opts={}){
+    const res = await fetch(path, { headers: {"Content-Type":"application/json"}, ...opts });
     const data = await res.json().catch(()=> ({}));
     if(!res.ok) throw new Error(data.error || "Xatolik");
     return data;
   }
 
-  function calcEta(ahead){
-    const min = Math.max(0, Number(ahead || 0)) * 5;
-    if(min === 0) return "Hozir kirishingiz mumkin";
-    return `${min} minut`;
-  }
-
-  // ✅ GET /api/navbat
   async function takeTicket(){
     msg.textContent = "";
     const name = document.getElementById("name").value.trim();
@@ -95,49 +91,58 @@
     if(!phone) return showError("Telefon kiriting");
 
     try{
-      const r = await api("/api/navbat");
+      const r = await api("/api/take", {
+        method:"POST",
+        body: JSON.stringify({ name, phone })
+      });
 
-      if(!r.success) throw new Error("Xatolik");
-
-      localStorage.setItem("ticket_number", String(r.number));
-      localStorage.setItem("ticket_name", name);
-      localStorage.setItem("ticket_phone", phone);
-
+      localStorage.setItem("ticket_id", r.ticket_id);
       showOk("Navbat olindi!");
-      loadTicket();
+      await loadTicket();
     }catch(e){
       showError(e.message);
     }
   }
 
-  function loadTicket(){
-    const num = localStorage.getItem("ticket_number");
-    if(!num){
+  async function loadTicket(){
+    const id = localStorage.getItem("ticket_id");
+    if(!id){
       setTicketMode(false);
       return;
     }
+    try{
+      const r = await api(`/api/ticket?id=${encodeURIComponent(id)}`);
+      setTicketMode(true);
 
-    setTicketMode(true);
+      ticketNo.textContent = r.ticket_id;
+      aheadEl.textContent = r.ahead;
+      etaEl.textContent = r.eta;
+      waitCountEl.textContent = r.wait_count;
 
-    ticketNoEl.textContent = num;
-    statusEl.innerHTML = `<span class="ok">QABUL QILINDI ✅</span>`;
-
-    const ahead = 0;
-    aheadEl.textContent = ahead;
-    etaEl.textContent = calcEta(ahead);
+      if(r.status === "NOW"){
+        statusEl.innerHTML = `<span class="ok">NAVBATINGIZ KELDI ✅</span>`;
+      } else if(r.status === "SERVED"){
+        statusEl.innerHTML = `<span class="ok">TUGATILDI ✅</span>`;
+      } else {
+        statusEl.innerHTML = `KUTILYAPTI ⏳`;
+      }
+    }catch(e){
+      localStorage.removeItem("ticket_id");
+      setTicketMode(false);
+      showError("Chipta topilmadi. Qaytadan navbat oling.");
+    }
   }
 
   document.getElementById("takeBtn").addEventListener("click", takeTicket);
   document.getElementById("refreshBtn").addEventListener("click", loadTicket);
   document.getElementById("newBtn").addEventListener("click", ()=>{
-    localStorage.removeItem("ticket_number");
-    localStorage.removeItem("ticket_name");
-    localStorage.removeItem("ticket_phone");
+    localStorage.removeItem("ticket_id");
     setTicketMode(false);
     msg.textContent = "";
   });
 
   loadTicket();
+  setInterval(loadTicket, 7000);
 </script>
 </body>
 </html>
