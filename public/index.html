@@ -1,128 +1,157 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="uz">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NAVBATUZ</title>
   <style>
-    body{
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:#fff;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      height:100vh;
-    }
-    .card{
-      width:320px;
-      border-radius:18px;
-      padding:28px 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.12);
-      text-align:center;
-    }
-    h1{
-      margin:0 0 18px 0;
-      letter-spacing:1px;
-    }
-    .line{
-      margin:6px 0;
-      font-size:16px;
-    }
-    .ticket{
-      font-weight:bold;
-      color:#000;
-    }
-    button{
-      margin-top:16px;
-      border:0;
-      background:#1677ff;
-      color:#fff;
-      padding:12px 18px;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:16px;
-    }
-    button:active{ transform:scale(.99); }
-    .small{
-      margin-top:10px;
-      font-size:12px;
-      opacity:.6;
-    }
+    body{margin:0;font-family:Arial,sans-serif;background:#f6f7fb;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px}
+    .card{width:360px;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
+    h1{margin:0 0 8px;font-size:20px}
+    .muted{color:#666;font-size:13px;margin-bottom:14px}
+    label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
+    input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none}
+    button{width:100%;padding:12px;border:0;border-radius:10px;font-size:15px;cursor:pointer}
+    .btn{background:#5b2cff;color:#fff;margin-top:12px}
+    .btn2{background:#111;color:#fff;margin-top:10px}
+    .box{margin-top:14px;padding:12px;border-radius:12px;background:#f2f3ff}
+    .row{display:flex;justify-content:space-between;margin:6px 0;font-size:14px}
+    .big{font-size:22px;font-weight:700}
+    .ok{color:#0a7b2a;font-weight:700}
+    .err{color:#b00020;font-weight:700}
+    .hide{display:none}
   </style>
 </head>
 <body>
   <div class="card">
     <h1>NAVBATUZ</h1>
+    <div class="muted">Navbat olish uchun ism va telefon kiriting.</div>
 
-    <div class="line">Ticket: <span id="ticket" class="ticket">—</span></div>
-    <div class="line">Status: <span id="status">—</span></div>
-    <div class="line">Position: <span id="position">—</span></div>
-    <div class="line">ETA: <span id="eta">—</span></div>
+    <div id="takeBox">
+      <label>Ism</label>
+      <input id="name" placeholder="Masalan: Ali" />
 
-    <button id="takeBtn">Navbat olish</button>
+      <label>Telefon</label>
+      <input id="phone" placeholder="Masalan: +99890xxxxxxx" />
 
-    <div class="small">Agar sahifa yangilansa ham ticket saqlanadi.</div>
+      <button class="btn" id="takeBtn">Navbat olish</button>
+      <div id="msg" class="muted"></div>
+    </div>
+
+    <div id="ticketBox" class="box hide">
+      <div class="row"><div>Chipta raqami:</div><div class="big" id="ticketNo">—</div></div>
+      <div class="row"><div>Holat:</div><div id="status">—</div></div>
+      <div class="row"><div>Oldingizda:</div><div id="ahead">—</div></div>
+      <div class="row"><div>Taxminiy kutish:</div><div id="eta">—</div></div>
+
+      <button class="btn2" id="refreshBtn">Yangilash</button>
+      <button class="btn" id="newBtn" style="background:#ff2c55">Yangi navbat olish</button>
+    </div>
   </div>
 
 <script>
-  const ticketEl = document.getElementById("ticket");
+  const takeBox = document.getElementById("takeBox");
+  const ticketBox = document.getElementById("ticketBox");
+  const msg = document.getElementById("msg");
+
+  const ticketNo = document.getElementById("ticketNo");
   const statusEl = document.getElementById("status");
-  const posEl = document.getElementById("position");
+  const aheadEl = document.getElementById("ahead");
   const etaEl = document.getElementById("eta");
-  const takeBtn = document.getElementById("takeBtn");
 
-  function setUI(data){
-    ticketEl.textContent = data.ticket || "—";
-    statusEl.textContent = data.status || "—";
-    posEl.textContent = (data.position !== undefined ? data.position : "—");
+  function showError(t){ msg.innerHTML = `<span class="err">${t}</span>`; }
+  function showOk(t){ msg.innerHTML = `<span class="ok">${t}</span>`; }
 
-    // undefined bo‘lsa ham chiroyli ko‘rsatish
-    const etaText =
-      (data.eta === undefined || data.eta === null || Number.isNaN(Number(data.eta)))
-        ? "hisoblanmoqda..."
-        : `${data.eta} min`;
-
-    etaEl.textContent = etaText;
+  function setTicketMode(on){
+    if(on){
+      takeBox.classList.add("hide");
+      ticketBox.classList.remove("hide");
+    }else{
+      takeBox.classList.remove("hide");
+      ticketBox.classList.add("hide");
+    }
   }
 
-  async function apiTake(){
-    const r = await fetch("/api/take", { method:"POST" });
-    const j = await r.json();
-    if(!j.ok){
-      alert("Xatolik: /api/take ishlamadi: " + (j.error || "unknown"));
+  async function api(path, opts={}){
+    const res = await fetch(path, {
+      headers: {"Content-Type":"application/json"},
+      ...opts
+    });
+    const data = await res.json().catch(()=> ({}));
+    if(!res.ok) throw new Error(data.error || "Xatolik");
+    return data;
+  }
+
+  function calcEta(ahead){
+    // 1 odam = 5 minut (xohlasangiz o'zgartiramiz)
+    const min = Math.max(0, ahead) * 5;
+    if(min === 0) return "Hozir kirishingiz mumkin";
+    return `${min} minut`;
+  }
+
+  async function takeTicket(){
+    msg.textContent = "";
+    const name = document.getElementById("name").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+
+    if(!name) return showError("Ism kiriting");
+    if(!phone) return showError("Telefon kiriting");
+
+    try{
+      const r = await api("/api/take", {
+        method:"POST",
+        body: JSON.stringify({ name, phone })
+      });
+
+      localStorage.setItem("ticket_id", r.ticket_id);
+      showOk("Navbat olindi!");
+      await loadTicket();
+    }catch(e){
+      showError(e.message);
+    }
+  }
+
+  async function loadTicket(){
+    const id = localStorage.getItem("ticket_id");
+    if(!id){
+      setTicketMode(false);
       return;
     }
-    localStorage.setItem("ticket", j.ticket);
-    setUI(j);
-  }
+    try{
+      const r = await api(`/api/ticket?id=${encodeURIComponent(id)}`);
+      setTicketMode(true);
 
-  async function apiStatus(ticket){
-    const r = await fetch(`/api/status?ticket=${encodeURIComponent(ticket)}`);
-    const j = await r.json();
-    if(!j.ok){
-      alert("Xatolik: /api/status ishlamadi: " + (j.error || "unknown"));
-      return;
+      ticketNo.textContent = r.ticket_id;
+      statusEl.textContent = r.status;
+      aheadEl.textContent = r.ahead;
+      etaEl.textContent = calcEta(r.ahead);
+
+      if(r.status === "NOW"){
+        statusEl.innerHTML = `<span class="ok">NAVBATINGIZ KELDI ✅</span>`;
+      }
+      if(r.status === "SERVED"){
+        statusEl.innerHTML = `<span class="ok">Tugatildi ✅</span>`;
+      }
+    }catch(e){
+      // agar ticket topilmasa
+      localStorage.removeItem("ticket_id");
+      setTicketMode(false);
+      showError("Chipta topilmadi. Qaytadan navbat oling.");
     }
-    setUI(j);
   }
 
-  takeBtn.addEventListener("click", apiTake);
+  document.getElementById("takeBtn").addEventListener("click", takeTicket);
+  document.getElementById("refreshBtn").addEventListener("click", loadTicket);
+  document.getElementById("newBtn").addEventListener("click", ()=>{
+    localStorage.removeItem("ticket_id");
+    setTicketMode(false);
+    msg.textContent = "";
+  });
 
-  // Sahifa ochilganda: oldingi ticket bo‘lsa status ko‘rsatadi
-  const saved = localStorage.getItem("ticket");
-  if(saved){
-    apiStatus(saved);
-  } else {
-    setUI({ ticket:"—", status:"—", position:"—", eta:"—" });
-  }
-
-  // Har 5 soniyada avtomatik status yangilash
-  setInterval(() => {
-    const t = localStorage.getItem("ticket");
-    if(t) apiStatus(t);
-  }, 5000);
+  // sahifa ochilganda avtomatik tekshiradi
+  loadTicket();
+  // har 7 sekundda yangilab turadi
+  setInterval(loadTicket, 7000);
 </script>
 </body>
 </html>
-
