@@ -7,17 +7,9 @@
     "start": "node server.js"
   },
   "dependencies": {
-    {
-  "name": "navbatuz",
-  "version": "1.0.0",
-  "main": "server.js",
-  "type": "commonjs",
-  "scripts": { "start": "node server.js" },
-  "dependencies": {
-    "express": "^5.1.0",
-    "pg": "^8.13.1",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "pg": "^8.11.3",
     "telegraf": "^4.16.3"
   }
 }
-
-
