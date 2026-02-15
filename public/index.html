@@ -54,7 +54,7 @@
   const ticketBox = document.getElementById("ticketBox");
   const msg = document.getElementById("msg");
 
-  const ticketNo = document.getElementById("ticketNo");
+  const ticketNoEl = document.getElementById("ticketNo");
   const statusEl = document.getElementById("status");
   const aheadEl = document.getElementById("ahead");
   const etaEl = document.getElementById("eta");
@@ -72,23 +72,20 @@
     }
   }
 
-  async function api(path, opts={}){
-    const res = await fetch(path, {
-      headers: {"Content-Type":"application/json"},
-      ...opts
-    });
+  async function api(path){
+    const res = await fetch(path);
     const data = await res.json().catch(()=> ({}));
     if(!res.ok) throw new Error(data.error || "Xatolik");
     return data;
   }
 
   function calcEta(ahead){
-    // 1 odam = 5 minut (xohlasangiz o'zgartiramiz)
-    const min = Math.max(0, ahead) * 5;
+    const min = Math.max(0, Number(ahead || 0)) * 5;
     if(min === 0) return "Hozir kirishingiz mumkin";
     return `${min} minut`;
   }
 
+  // ✅ GET /api/navbat
   async function takeTicket(){
     msg.textContent = "";
     const name = document.getElementById("name").value.trim();
@@ -98,60 +95,49 @@
     if(!phone) return showError("Telefon kiriting");
 
     try{
-      const r = await api("/api/take", {
-        method:"POST",
-        body: JSON.stringify({ name, phone })
-      });
+      const r = await api("/api/navbat");
 
-      localStorage.setItem("ticket_id", r.ticket_id);
+      if(!r.success) throw new Error("Xatolik");
+
+      localStorage.setItem("ticket_number", String(r.number));
+      localStorage.setItem("ticket_name", name);
+      localStorage.setItem("ticket_phone", phone);
+
       showOk("Navbat olindi!");
-      await loadTicket();
+      loadTicket();
     }catch(e){
       showError(e.message);
     }
   }
 
-  async function loadTicket(){
-    const id = localStorage.getItem("ticket_id");
-    if(!id){
+  function loadTicket(){
+    const num = localStorage.getItem("ticket_number");
+    if(!num){
       setTicketMode(false);
       return;
     }
-    try{
-      const r = await api(`/api/ticket?id=${encodeURIComponent(id)}`);
-      setTicketMode(true);
 
-      ticketNo.textContent = r.ticket_id;
-      statusEl.textContent = r.status;
-      aheadEl.textContent = r.ahead;
-      etaEl.textContent = calcEta(r.ahead);
+    setTicketMode(true);
 
-      if(r.status === "NOW"){
-        statusEl.innerHTML = `<span class="ok">NAVBATINGIZ KELDI ✅</span>`;
-      }
-      if(r.status === "SERVED"){
-        statusEl.innerHTML = `<span class="ok">Tugatildi ✅</span>`;
-      }
-    }catch(e){
-      // agar ticket topilmasa
-      localStorage.removeItem("ticket_id");
-      setTicketMode(false);
-      showError("Chipta topilmadi. Qaytadan navbat oling.");
-    }
+    ticketNoEl.textContent = num;
+    statusEl.innerHTML = `<span class="ok">QABUL QILINDI ✅</span>`;
+
+    const ahead = 0;
+    aheadEl.textContent = ahead;
+    etaEl.textContent = calcEta(ahead);
   }
 
   document.getElementById("takeBtn").addEventListener("click", takeTicket);
   document.getElementById("refreshBtn").addEventListener("click", loadTicket);
   document.getElementById("newBtn").addEventListener("click", ()=>{
-    localStorage.removeItem("ticket_id");
+    localStorage.removeItem("ticket_number");
+    localStorage.removeItem("ticket_name");
+    localStorage.removeItem("ticket_phone");
     setTicketMode(false);
     msg.textContent = "";
   });
 
-  // sahifa ochilganda avtomatik tekshiradi
   loadTicket();
-  // har 7 sekundda yangilab turadi
-  setInterval(loadTicket, 7000);
 </script>
 </body>
 </html>
