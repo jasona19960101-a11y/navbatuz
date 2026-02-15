@@ -6,21 +6,28 @@
   <title>NAVBATUZ</title>
   <style>
     body{margin:0;font-family:Arial,sans-serif;background:#f6f7fb;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px}
-    .card{width:400px;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
-    h1{margin:0 0 8px;font-size:20px}
+    .card{width:420px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
+    h1{margin:0 0 8px;font-size:22px}
     .muted{color:#666;font-size:13px;margin-bottom:14px}
     label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
     input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none}
-    button{width:100%;padding:12px;border:0;border-radius:10px;font-size:15px;cursor:pointer}
-    .btn{background:#5b2cff;color:#fff;margin-top:12px}
-    .btn2{background:#111;color:#fff;margin-top:10px}
-    .danger{background:#ff2c55;color:#fff;margin-top:10px}
+    button{padding:12px;border:0;border-radius:10px;font-size:14px;cursor:pointer}
+    .btn{background:#5b2cff;color:#fff;margin-top:12px;width:100%}
+    .btn2{background:#111;color:#fff;margin-top:10px;width:100%}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .gbtn{width:100%;background:#eef1ff;color:#111;border:1px solid #d8ddff}
+    .gbtn.red{background:#ffe9ee;border:1px solid #ffc3d0}
+    .gbtn.dark{background:#111;color:#fff;border:1px solid #111}
+    .gbtn.green{background:#eaffef;border:1px solid #bff5cc}
     .box{margin-top:14px;padding:12px;border-radius:12px;background:#f2f3ff}
     .row{display:flex;justify-content:space-between;margin:6px 0;font-size:14px}
-    .big{font-size:22px;font-weight:700}
+    .big{font-size:26px;font-weight:700}
     .ok{color:#0a7b2a;font-weight:700}
     .err{color:#b00020;font-weight:700}
     .hide{display:none}
+    .receipt{margin-top:12px}
+    .receipt img{width:100%;border-radius:12px;border:1px solid #eee}
+    .mini{font-size:12px;color:#555}
   </style>
 </head>
 <body>
@@ -43,11 +50,26 @@
       <div class="row"><div>Chipta raqami:</div><div class="big" id="ticketNo">—</div></div>
       <div class="row"><div>Holat:</div><div id="status">—</div></div>
       <div class="row"><div>Oldingizda:</div><div id="ahead">—</div></div>
-      <div class="row"><div>Kutish vaqti:</div><div id="eta">—</div></div>
-      <div class="row"><div>Kutayotganlar (WAIT):</div><div id="waitCount">—</div></div>
+      <div class="row"><div>Kutayotganlar (WAIT):</div><div id="waitingTotal">—</div></div>
+      <div class="row"><div>O‘rtacha xizmat:</div><div id="avgMin">—</div></div>
+      <div class="row"><div>Kutish vaqti:</div><div><b id="eta">—</b> <span class="mini" id="etaTimer"></span></div></div>
 
-      <button class="btn2" id="refreshBtn">Yangilash</button>
-      <button class="danger" id="newBtn">Yangi navbat olish</button>
+      <div class="grid">
+        <button class="gbtn green" id="arrivedBtn">✅ Navbatim keldi</button>
+        <button class="gbtn" id="waitBtn">⏳ Hali kelmadi</button>
+        <button class="gbtn dark" id="servedBtn">✅ Xizmat tugadi</button>
+        <button class="gbtn red" id="cancelBtn">❌ Navbatdan chiqish</button>
+      </div>
+
+      <button class="btn2" id="refreshBtn">🔄 Yangilash</button>
+      <button class="btn" id="newBtn" style="background:#ff2c55">Yangi navbat olish</button>
+
+      <div class="receipt" id="receiptBox">
+        <div class="muted">🧾 Queue cheki (JPG + QR):</div>
+        <img id="receiptImg" alt="receipt" />
+      </div>
+
+      <div id="msg2" class="muted"></div>
     </div>
   </div>
 
@@ -55,15 +77,24 @@
   const takeBox = document.getElementById("takeBox");
   const ticketBox = document.getElementById("ticketBox");
   const msg = document.getElementById("msg");
+  const msg2 = document.getElementById("msg2");
 
   const ticketNo = document.getElementById("ticketNo");
   const statusEl = document.getElementById("status");
   const aheadEl = document.getElementById("ahead");
+  const waitingTotalEl = document.getElementById("waitingTotal");
+  const avgMinEl = document.getElementById("avgMin");
   const etaEl = document.getElementById("eta");
-  const waitCountEl = document.getElementById("waitCount");
+  const etaTimerEl = document.getElementById("etaTimer");
+  const receiptImg = document.getElementById("receiptImg");
+
+  let countdownSec = null;
+  let countdownTimer = null;
 
   function showError(t){ msg.innerHTML = `<span class="err">${t}</span>`; }
   function showOk(t){ msg.innerHTML = `<span class="ok">${t}</span>`; }
+  function showError2(t){ msg2.innerHTML = `<span class="err">${t}</span>`; }
+  function showOk2(t){ msg2.innerHTML = `<span class="ok">${t}</span>`; }
 
   function setTicketMode(on){
     if(on){
@@ -76,10 +107,35 @@
   }
 
   async function api(path, opts={}){
-    const res = await fetch(path, { headers: {"Content-Type":"application/json"}, ...opts });
+    const res = await fetch(path, {
+      headers: {"Content-Type":"application/json"},
+      ...opts
+    });
     const data = await res.json().catch(()=> ({}));
     if(!res.ok) throw new Error(data.error || "Xatolik");
     return data;
+  }
+
+  function startCountdown(seconds){
+    countdownSec = Number(seconds);
+    if (!Number.isFinite(countdownSec) || countdownSec <= 0) {
+      etaTimerEl.textContent = "";
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      return;
+    }
+
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(() => {
+      countdownSec = Math.max(0, countdownSec - 1);
+      const m = Math.floor(countdownSec / 60);
+      const s = countdownSec % 60;
+      etaTimerEl.textContent = ` (⏳ ${m}:${String(s).padStart(2,"0")})`;
+      if (countdownSec <= 0) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+    }, 1000);
   }
 
   async function takeTicket(){
@@ -104,7 +160,16 @@
     }
   }
 
+  function statusHuman(s){
+    if (s === "WAIT") return "KUTILYAPTI ⏳";
+    if (s === "NOW") return "NAVBATINGIZ ✅";
+    if (s === "SERVED") return "TUGADI ✅";
+    if (s === "CANCELLED") return "CHIQILDI ❌";
+    return s;
+  }
+
   async function loadTicket(){
+    msg2.textContent = "";
     const id = localStorage.getItem("ticket_id");
     if(!id){
       setTicketMode(false);
@@ -115,21 +180,50 @@
       setTicketMode(true);
 
       ticketNo.textContent = r.ticket_id;
+      statusEl.innerHTML = `<b>${statusHuman(r.status)}</b>`;
       aheadEl.textContent = r.ahead;
-      etaEl.textContent = r.eta;
-      waitCountEl.textContent = r.wait_count;
+      waitingTotalEl.textContent = r.waiting_total;
+      avgMinEl.textContent = r.avg_service_min + " minut";
+      etaEl.textContent = r.eta_min + " minut";
 
-      if(r.status === "NOW"){
-        statusEl.innerHTML = `<span class="ok">NAVBATINGIZ KELDI ✅</span>`;
-      } else if(r.status === "SERVED"){
-        statusEl.innerHTML = `<span class="ok">TUGATILDI ✅</span>`;
+      // countdown = eta_min * 60
+      if (r.status === "NOW") {
+        etaEl.innerHTML = `<span class="ok">Hozir kirishingiz mumkin ✅</span>`;
+        startCountdown(0);
       } else {
-        statusEl.innerHTML = `KUTILYAPTI ⏳`;
+        startCountdown(r.eta_min * 60);
       }
+
+      // receipt jpg
+      receiptImg.src = `/api/receipt?id=${encodeURIComponent(r.ticket_id)}&t=${Date.now()}`;
     }catch(e){
       localStorage.removeItem("ticket_id");
       setTicketMode(false);
       showError("Chipta topilmadi. Qaytadan navbat oling.");
+    }
+  }
+
+  async function doAction(action){
+    const id = Number(localStorage.getItem("ticket_id"));
+    if (!id) return;
+    try{
+      const r = await api("/api/action", {
+        method:"POST",
+        body: JSON.stringify({ id, action })
+      });
+      if (action === "served") {
+        showOk2("✅ Xizmat tugadi. Vaqt saqlandi.");
+      } else if (action === "cancel") {
+        showOk2("❌ Navbatdan chiqdingiz.");
+        localStorage.removeItem("ticket_id");
+        setTicketMode(false);
+        return;
+      } else {
+        showOk2("✅ Qabul qilindi.");
+      }
+      await loadTicket();
+    }catch(e){
+      showError2(e.message);
     }
   }
 
@@ -139,7 +233,22 @@
     localStorage.removeItem("ticket_id");
     setTicketMode(false);
     msg.textContent = "";
+    msg2.textContent = "";
   });
+
+  document.getElementById("arrivedBtn").addEventListener("click", ()=>doAction("arrived"));
+  document.getElementById("waitBtn").addEventListener("click", ()=>doAction("wait"));
+  document.getElementById("servedBtn").addEventListener("click", ()=>doAction("served"));
+  document.getElementById("cancelBtn").addEventListener("click", ()=>doAction("cancel"));
+
+  // URLda ?ticket= bo'lsa localStoragega yozib olamiz
+  (function(){
+    const u = new URL(location.href);
+    const t = u.searchParams.get("ticket");
+    if (t && /^\d+$/.test(t)) {
+      localStorage.setItem("ticket_id", t);
+    }
+  })();
 
   loadTicket();
   setInterval(loadTicket, 7000);
