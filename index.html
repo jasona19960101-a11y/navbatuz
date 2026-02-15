@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NAVBATUZ</title>
+  <style>
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background:#fff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+    .card{
+      width:320px;
+      border-radius:18px;
+      padding:28px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.12);
+      text-align:center;
+    }
+    h1{
+      margin:0 0 18px 0;
+      letter-spacing:1px;
+    }
+    .line{
+      margin:6px 0;
+      font-size:16px;
+    }
+    .ticket{
+      font-weight:bold;
+      color:#000;
+    }
+    button{
+      margin-top:16px;
+      border:0;
+      background:#1677ff;
+      color:#fff;
+      padding:12px 18px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:16px;
+    }
+    button:active{ transform:scale(.99); }
+    .small{
+      margin-top:10px;
+      font-size:12px;
+      opacity:.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>NAVBATUZ</h1>
+
+    <div class="line">Ticket: <span id="ticket" class="ticket">—</span></div>
+    <div class="line">Status: <span id="status">—</span></div>
+    <div class="line">Position: <span id="position">—</span></div>
+    <div class="line">ETA: <span id="eta">—</span></div>
+
+    <button id="takeBtn">Navbat olish</button>
+
+    <div class="small">Agar sahifa yangilansa ham ticket saqlanadi.</div>
+  </div>
+
+<script>
+  const ticketEl = document.getElementById("ticket");
+  const statusEl = document.getElementById("status");
+  const posEl = document.getElementById("position");
+  const etaEl = document.getElementById("eta");
+  const takeBtn = document.getElementById("takeBtn");
+
+  function setUI(data){
+    ticketEl.textContent = data.ticket || "—";
+    statusEl.textContent = data.status || "—";
+    posEl.textContent = (data.position !== undefined ? data.position : "—");
+
+    // undefined bo‘lsa ham chiroyli ko‘rsatish
+    const etaText =
+      (data.eta === undefined || data.eta === null || Number.isNaN(Number(data.eta)))
+        ? "hisoblanmoqda..."
+        : `${data.eta} min`;
+
+    etaEl.textContent = etaText;
+  }
+
+  async function apiTake(){
+    const r = await fetch("/api/take", { method:"POST" });
+    const j = await r.json();
+    if(!j.ok){
+      alert("Xatolik: /api/take ishlamadi: " + (j.error || "unknown"));
+      return;
+    }
+    localStorage.setItem("ticket", j.ticket);
+    setUI(j);
+  }
+
+  async function apiStatus(ticket){
+    const r = await fetch(`/api/status?ticket=${encodeURIComponent(ticket)}`);
+    const j = await r.json();
+    if(!j.ok){
+      alert("Xatolik: /api/status ishlamadi: " + (j.error || "unknown"));
+      return;
+    }
+    setUI(j);
+  }
+
+  takeBtn.addEventListener("click", apiTake);
+
+  // Sahifa ochilganda: oldingi ticket bo‘lsa status ko‘rsatadi
+  const saved = localStorage.getItem("ticket");
+  if(saved){
+    apiStatus(saved);
+  } else {
+    setUI({ ticket:"—", status:"—", position:"—", eta:"—" });
+  }
+
+  // Har 5 soniyada avtomatik status yangilash
+  setInterval(() => {
+    const t = localStorage.getItem("ticket");
+    if(t) apiStatus(t);
+  }, 5000);
+</script>
+</body>
+</html>
