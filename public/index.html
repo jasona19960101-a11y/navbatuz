@@ -4,52 +4,454 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NAVBATUZ</title>
+  <meta name="theme-color" content="#0b1020" />
   <style>
-    body{font-family:system-ui,Segoe UI,Roboto,Arial; background:#0b1220; color:#e8eefc; margin:0;}
-    .wrap{max-width:720px; margin:0 auto; padding:28px;}
-    .card{background:#121a2b; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px;}
-    .brand{font-size:28px; font-weight:800; letter-spacing:0.5px;}
-    .muted{opacity:.8; line-height:1.5}
-    .welcome{min-height:84px; margin-top:12px; font-size:18px; line-height:1.45;}
-    .langs{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
-    button{cursor:pointer; border:1px solid rgba(255,255,255,.12); background:#1a2540; color:#e8eefc;
-      padding:10px 12px; border-radius:12px; font-size:16px;}
-    button:hover{filter:brightness(1.1)}
-    .small{font-size:13px; opacity:.8; margin-top:12px;}
-    .hidden{display:none;}
+    :root{
+      --bg0:#070a14;
+      --bg1:#0b1020;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.12);
+      --text:#eaf0ff;
+      --muted: rgba(234,240,255,.72);
+      --muted2: rgba(234,240,255,.55);
+      --shadow: 0 24px 80px rgba(0,0,0,.55);
+      --radius: 22px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 10%, rgba(120,82,255,.28), transparent 55%),
+        radial-gradient(1000px 700px at 85% 30%, rgba(0,199,255,.18), transparent 50%),
+        radial-gradient(900px 600px at 55% 90%, rgba(0,255,163,.12), transparent 52%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    .noise{
+      pointer-events:none;
+      position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      opacity:.35;
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 26px 18px 40px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      margin-bottom:16px;
+    }
+
+    .logo{
+      display:flex; align-items:center; gap:10px;
+      user-select:none;
+    }
+    .mark{
+      width:40px; height:40px; border-radius:14px;
+      background:
+        radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.75), transparent 60%),
+        linear-gradient(135deg, rgba(120,82,255,.95), rgba(0,199,255,.65));
+      box-shadow: 0 14px 30px rgba(120,82,255,.18);
+      border:1px solid rgba(255,255,255,.16);
+    }
+    .brand{
+      font-weight: 860;
+      letter-spacing: .6px;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+    .tagline{
+      font-size: 12px;
+      color: var(--muted2);
+      margin-top:2px;
+    }
+
+    .pill{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      backdrop-filter: blur(10px);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:50%;
+      background: rgba(0,255,163,.9);
+      box-shadow: 0 0 0 6px rgba(0,255,163,.12);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+    }
+    @media (max-width: 920px){
+      .grid{grid-template-columns: 1fr}
+    }
+
+    .card{
+      border-radius: var(--radius);
+      border: 1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      position:relative;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-1px;
+      background:
+        radial-gradient(700px 220px at 20% 0%, rgba(120,82,255,.18), transparent 60%),
+        radial-gradient(600px 240px at 90% 30%, rgba(0,199,255,.12), transparent 60%);
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .card-inner{
+      position:relative;
+      z-index:1;
+      padding: 20px 18px;
+    }
+
+    .hero-title{
+      font-size: 34px;
+      letter-spacing: .2px;
+      margin: 4px 0 8px;
+      line-height: 1.08;
+    }
+    .hero-sub{
+      margin:0 0 14px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 14px;
+      max-width: 58ch;
+    }
+
+    .welcome{
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(9,12,24,.55);
+      padding: 14px 14px;
+      min-height: 86px;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+    }
+
+    .spark{
+      width: 40px; height: 40px; border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background:
+        radial-gradient(10px 10px at 30% 35%, rgba(255,255,255,.70), transparent 58%),
+        linear-gradient(135deg, rgba(0,255,163,.25), rgba(0,199,255,.18));
+      box-shadow: 0 18px 40px rgba(0,199,255,.08);
+      flex: 0 0 auto;
+    }
+    .welcome-text{
+      font-size: 16px;
+      line-height: 1.45;
+      color: rgba(234,240,255,.92);
+    }
+    .fade{
+      animation: fadeIn .28s ease both;
+    }
+    @keyframes fadeIn{
+      from{opacity:0; transform:translateY(4px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    .lang-title{
+      margin: 16px 0 10px;
+      font-size: 13px;
+      color: var(--muted2);
+      display:flex; align-items:center; gap:10px;
+    }
+    .lang-title:before{
+      content:"";
+      height:1px; flex:1;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    }
+    .lang-title:after{
+      content:"";
+      height:1px; flex:1;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+    }
+
+    .lang-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 520px){
+      .lang-grid{grid-template-columns: 1fr}
+    }
+
+    .lang-card{
+      cursor:pointer;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      padding: 14px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    .lang-card:hover{
+      transform: translateY(-1px);
+      background: rgba(255,255,255,.07);
+      border-color: rgba(255,255,255,.18);
+    }
+    .lang-left{
+      display:flex; align-items:center; gap: 10px;
+    }
+    .flag{
+      width: 38px; height: 38px;
+      border-radius: 14px;
+      display:grid; place-items:center;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      font-size: 18px;
+    }
+    .lang-name{
+      font-weight: 750;
+      font-size: 14px;
+    }
+    .lang-hint{
+      font-size: 12px;
+      color: var(--muted2);
+      margin-top: 1px;
+    }
+    .chev{
+      opacity:.55;
+      font-size: 18px;
+      transform: translateY(-1px);
+    }
+
+    .side{
+      padding: 18px;
+    }
+    .mini{
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .mini h3{
+      margin:0 0 8px;
+      font-size: 13px;
+      letter-spacing: .2px;
+      color: rgba(234,240,255,.88);
+    }
+    .mini p{
+      margin:0;
+      font-size: 12px;
+      color: var(--muted2);
+      line-height: 1.5;
+    }
+    .steps{
+      margin-top: 10px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .step{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(9,12,24,.40);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .badge{
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      color: rgba(234,240,255,.78);
+      white-space: nowrap;
+    }
+
+    .footer{
+      margin-top: 14px;
+      color: rgba(234,240,255,.45);
+      font-size: 11px;
+      text-align:center;
+    }
+
+    .hidden{display:none !important}
   </style>
 </head>
+
 <body>
+  <div class="noise"></div>
+
   <div class="wrap">
-    <div class="card">
-      <div class="brand">NAVBATUZ</div>
-      <div class="muted">Queue management system</div>
-
-      <div id="welcome" class="welcome"></div>
-
-      <div id="langBlock" class="langs hidden">
-        <button onclick="chooseLang('uz')">🇺🇿 O‘zbek</button>
-        <button onclick="chooseLang('ru')">🇷🇺 Русский</button>
-        <button onclick="chooseLang('en')">🇬🇧 English</button>
+    <div class="topbar">
+      <div class="logo">
+        <div class="mark"></div>
+        <div>
+          <div class="brand">NAVBATUZ</div>
+          <div class="tagline">Queue management system</div>
+        </div>
       </div>
 
-      <div id="afterChoose" class="small hidden"></div>
+      <div class="pill" id="statusPill">
+        <div class="dot"></div>
+        <div>Online • Ready</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left / Main -->
+      <div class="card">
+        <div class="card-inner">
+          <div class="hero-title">Navbatni tez va oson oling.</div>
+          <p class="hero-sub">
+            NAVBATUZ orqali navbatni onlayn olib, vaqtingizni tejaysiz.
+            Avval tilni tanlang — keyin viloyat, tuman va xizmatni tanlashni boshlaysiz.
+          </p>
+
+          <div class="welcome" aria-live="polite">
+            <div class="spark"></div>
+            <div id="welcome" class="welcome-text"></div>
+          </div>
+
+          <div id="langTitle" class="lang-title hidden">Select language</div>
+
+          <div id="langGrid" class="lang-grid hidden">
+            <div class="lang-card" onclick="chooseLang('uz')">
+              <div class="lang-left">
+                <div class="flag">🇺🇿</div>
+                <div>
+                  <div class="lang-name">O‘zbek</div>
+                  <div class="lang-hint">Davom etish</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+
+            <div class="lang-card" onclick="chooseLang('ru')">
+              <div class="lang-left">
+                <div class="flag">🇷🇺</div>
+                <div>
+                  <div class="lang-name">Русский</div>
+                  <div class="lang-hint">Продолжить</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+
+            <div class="lang-card" onclick="chooseLang('en')">
+              <div class="lang-left">
+                <div class="flag">🇬🇧</div>
+                <div>
+                  <div class="lang-name">English</div>
+                  <div class="lang-hint">Continue</div>
+                </div>
+              </div>
+              <div class="chev">›</div>
+            </div>
+          </div>
+
+          <div id="afterChoose" class="mini hidden" style="margin-top:14px;">
+            <h3 id="afterTitle">✅ Ready</h3>
+            <p id="afterText">—</p>
+            <div class="steps" id="steps"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right / Side -->
+      <div class="card">
+        <div class="card-inner side">
+          <div class="mini">
+            <h3>⚡ Qanday ishlaydi?</h3>
+            <p>3 qadamda navbat oling: hududni tanlang, xizmatni tanlang, ticket oling.</p>
+            <div class="steps">
+              <div class="step">
+                <span>1) Til tanlash</span>
+                <span class="badge">Now</span>
+              </div>
+              <div class="step">
+                <span>2) Viloyat / Tuman</span>
+                <span class="badge">Next</span>
+              </div>
+              <div class="step">
+                <span>3) Xizmat / Punkt</span>
+                <span class="badge">Soon</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mini">
+            <h3>🔒 Xavfsiz</h3>
+            <p>Til tanlovi localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.</p>
+          </div>
+
+          <div class="mini">
+            <h3>📲 Telegram bot</h3>
+            <p>Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).</p>
+          </div>
+
+          <div class="footer">© NAVBATUZ • Render + PostgreSQL • Web + Telegram</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
     const TEXT = {
       uz: {
+        hero: "Navbatni tez va oson oling.",
+        sub: "NAVBATUZ orqali navbatni onlayn olib, vaqtingizni tejaysiz. Avval tilni tanlang — keyin viloyat, tuman va xizmatni tanlashni boshlaysiz.",
         welcome: "NAVBATUZga xush kelibsiz!<br/>NAVBATUZ bilan siz vaqtingizni tejaysiz.",
-        chosen: "✅ Til tanlandi: O‘zbek. (Keyingi bosqich: Viloyat → Tuman → Xizmat ...)"
+        select: "Tilni tanlang",
+        afterTitle: "✅ Tayyor",
+        afterText: "Til tanlandi: O‘zbek. Endi navbat olishni boshlashingiz mumkin.",
+        steps: ["📍 Viloyatni tanlang", "🏙 Tumanni tanlang", "🧾 Xizmatni tanlang", "🎟 Ticket oling"]
       },
       ru: {
+        hero: "Быстро и удобно получите очередь.",
+        sub: "С NAVBATUZ вы экономите время, получая очередь онлайн. Сначала выберите язык — затем регион, район и услугу.",
         welcome: "Добро пожаловать в NAVBATUZ!<br/>С NAVBATUZ вы экономите время.",
-        chosen: "✅ Язык выбран: Русский. (Следующий шаг: Регион → Район → Услуга ...)"
+        select: "Выберите язык",
+        afterTitle: "✅ Готово",
+        afterText: "Язык выбран: Русский. Теперь можно начать получение очереди.",
+        steps: ["📍 Выберите регион", "🏙 Выберите район", "🧾 Выберите услугу", "🎟 Получите талон"]
       },
       en: {
+        hero: "Get your queue fast and easily.",
+        sub: "With NAVBATUZ you save time by taking a ticket online. Choose a language first — then pick region, district and service.",
         welcome: "Welcome to NAVBATUZ!<br/>With NAVBATUZ you save time.",
-        chosen: "✅ Language selected: English. (Next: Region → District → Service ...)"
+        select: "Choose a language",
+        afterTitle: "✅ Ready",
+        afterText: "Language selected: English. You can start taking a ticket now.",
+        steps: ["📍 Choose region", "🏙 Choose district", "🧾 Choose service", "🎟 Get ticket"]
       }
     };
 
@@ -63,26 +465,68 @@
     }
 
     const welcomeEl = document.getElementById("welcome");
-    const langBlock = document.getElementById("langBlock");
-    const afterChoose = document.getElementById("afterChoose");
+    const langTitleEl = document.getElementById("langTitle");
+    const langGridEl = document.getElementById("langGrid");
+    const afterBox = document.getElementById("afterChoose");
+    const afterTitle = document.getElementById("afterTitle");
+    const afterText = document.getElementById("afterText");
+    const stepsEl = document.getElementById("steps");
+
+    // update hero text
+    function setHero(lang){
+      const t = TEXT[lang] || TEXT.uz;
+      document.querySelector(".hero-title").textContent = t.hero;
+      document.querySelector(".hero-sub").textContent = t.sub;
+    }
+
+    function setWelcome(html){
+      welcomeEl.classList.remove("fade");
+      // reflow
+      void welcomeEl.offsetWidth;
+      welcomeEl.innerHTML = html;
+      welcomeEl.classList.add("fade");
+    }
 
     async function runIntro() {
+      // intro: UZ -> RU -> EN
       const seq = ["uz", "ru", "en"];
       for (const lang of seq) {
-        welcomeEl.innerHTML = TEXT[lang].welcome;
-        await new Promise(r => setTimeout(r, 3500));
+        setHero(lang);
+        setWelcome(TEXT[lang].welcome);
+        await new Promise(r => setTimeout(r, 3200));
       }
-      langBlock.classList.remove("hidden");
-      welcomeEl.innerHTML = "Tilni tanlang / Выберите язык / Choose a language";
+
+      // show language picker
+      langTitleEl.textContent = "Tilni tanlang / Выберите язык / Choose a language";
+      langTitleEl.classList.remove("hidden");
+      langGridEl.classList.remove("hidden");
+      setWelcome("Tilni tanlang / Выберите язык / Choose a language");
     }
 
     async function chooseLang(lang) {
       localStorage.setItem("lang", lang);
-      langBlock.classList.add("hidden");
-      welcomeEl.innerHTML = TEXT[lang].welcome;
-      afterChoose.classList.remove("hidden");
-      afterChoose.textContent = TEXT[lang].chosen;
 
+      const t = TEXT[lang] || TEXT.uz;
+      setHero(lang);
+      setWelcome(t.welcome);
+
+      langTitleEl.textContent = t.select;
+      langTitleEl.classList.remove("hidden");
+      langGridEl.classList.add("hidden");
+
+      afterBox.classList.remove("hidden");
+      afterTitle.textContent = t.afterTitle;
+      afterText.textContent = t.afterText;
+
+      stepsEl.innerHTML = "";
+      for (const s of t.steps) {
+        const div = document.createElement("div");
+        div.className = "step";
+        div.innerHTML = `<span>${s}</span><span class="badge">Next</span>`;
+        stepsEl.appendChild(div);
+      }
+
+      // optional: save to server
       try {
         await fetch("/api/lang", {
           method: "POST",
@@ -92,6 +536,7 @@
       } catch (e) {}
     }
 
+    // boot
     const saved = localStorage.getItem("lang");
     if (saved && TEXT[saved]) {
       chooseLang(saved);
