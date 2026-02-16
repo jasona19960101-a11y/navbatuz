@@ -134,9 +134,25 @@ async function startBot() {
     await ctx.reply((TEXT[lang] || TEXT.uz).welcome + "\n\n(Keyingi bosqich: Viloyat → Tuman → Xizmat ...)");
   });
 
- await bot.telegram.deleteWebhook({ drop_pending_updates: true });
-await bot.launch();
-console.log("Telegram bot started.");
+ const base = process.env.WEBHOOK_URL;
+if (!base) {
+  console.log("WEBHOOK_URL not set -> bot will not start.");
+  return;
+}
+
+// tokenni URLga qo'yib yubormaslik uchun pathni tokenning bir qismi bilan qilamiz
+const webhookPath = `/telegram/webhook/${process.env.BOT_TOKEN.slice(0, 12)}`;
+const webhookUrl = base.replace(/\/$/, "") + webhookPath;
+
+// Telegram update'larni shu endpointga yuboradi
+app.post(webhookPath, express.json(), (req, res) => {
+  bot.handleUpdate(req.body, res);
+});
+
+// Webhookni o'rnatamiz (pending update'larni ham tozalaydi)
+await bot.telegram.setWebhook(webhookUrl, { drop_pending_updates: true });
+
+console.log("Telegram bot started (webhook mode).");
 }
 
 // ====== START ======
@@ -155,4 +171,5 @@ console.log("Telegram bot started.");
     process.exit(1);
   }
 })();
+
 
