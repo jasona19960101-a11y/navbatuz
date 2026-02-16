@@ -1,257 +1,103 @@
 <!doctype html>
-<html lang="uz">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NAVBATUZ</title>
   <style>
-    body{margin:0;font-family:Arial,sans-serif;background:#f6f7fb;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:16px}
-    .card{width:420px;max-width:100%;background:#fff;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.12);padding:18px}
-    h1{margin:0 0 8px;font-size:22px}
-    .muted{color:#666;font-size:13px;margin-bottom:14px}
-    label{display:block;font-size:13px;margin:10px 0 6px;color:#333}
-    input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none}
-    button{padding:12px;border:0;border-radius:10px;font-size:14px;cursor:pointer}
-    .btn{background:#5b2cff;color:#fff;margin-top:12px;width:100%}
-    .btn2{background:#111;color:#fff;margin-top:10px;width:100%}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-    .gbtn{width:100%;background:#eef1ff;color:#111;border:1px solid #d8ddff}
-    .gbtn.red{background:#ffe9ee;border:1px solid #ffc3d0}
-    .gbtn.dark{background:#111;color:#fff;border:1px solid #111}
-    .gbtn.green{background:#eaffef;border:1px solid #bff5cc}
-    .box{margin-top:14px;padding:12px;border-radius:12px;background:#f2f3ff}
-    .row{display:flex;justify-content:space-between;margin:6px 0;font-size:14px}
-    .big{font-size:26px;font-weight:700}
-    .ok{color:#0a7b2a;font-weight:700}
-    .err{color:#b00020;font-weight:700}
-    .hide{display:none}
-    .receipt{margin-top:12px}
-    .receipt img{width:100%;border-radius:12px;border:1px solid #eee}
-    .mini{font-size:12px;color:#555}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial; background:#0b1220; color:#e8eefc; margin:0;}
+    .wrap{max-width:720px; margin:0 auto; padding:28px;}
+    .card{background:#121a2b; border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:18px;}
+    .brand{font-size:28px; font-weight:800; letter-spacing:0.5px;}
+    .muted{opacity:.8; line-height:1.5}
+    .welcome{min-height:84px; margin-top:12px; font-size:18px; line-height:1.45;}
+    .langs{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+    button{cursor:pointer; border:1px solid rgba(255,255,255,.12); background:#1a2540; color:#e8eefc;
+      padding:10px 12px; border-radius:12px; font-size:16px;}
+    button:hover{filter:brightness(1.1)}
+    .small{font-size:13px; opacity:.8; margin-top:12px;}
+    .hidden{display:none;}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>NAVBATUZ</h1>
-    <div class="muted">Navbat olish uchun ism va telefon kiriting.</div>
+  <div class="wrap">
+    <div class="card">
+      <div class="brand">NAVBATUZ</div>
+      <div class="muted">Queue management system</div>
 
-    <div id="takeBox">
-      <label>Ism</label>
-      <input id="name" placeholder="Masalan: Ali" />
+      <div id="welcome" class="welcome"></div>
 
-      <label>Telefon</label>
-      <input id="phone" placeholder="Masalan: +99890xxxxxxx" />
-
-      <button class="btn" id="takeBtn">Navbat olish</button>
-      <div id="msg" class="muted"></div>
-    </div>
-
-    <div id="ticketBox" class="box hide">
-      <div class="row"><div>Chipta raqami:</div><div class="big" id="ticketNo">—</div></div>
-      <div class="row"><div>Holat:</div><div id="status">—</div></div>
-      <div class="row"><div>Oldingizda:</div><div id="ahead">—</div></div>
-      <div class="row"><div>Kutayotganlar (WAIT):</div><div id="waitingTotal">—</div></div>
-      <div class="row"><div>O‘rtacha xizmat:</div><div id="avgMin">—</div></div>
-      <div class="row"><div>Kutish vaqti:</div><div><b id="eta">—</b> <span class="mini" id="etaTimer"></span></div></div>
-
-      <div class="grid">
-        <button class="gbtn green" id="arrivedBtn">✅ Navbatim keldi</button>
-        <button class="gbtn" id="waitBtn">⏳ Hali kelmadi</button>
-        <button class="gbtn dark" id="servedBtn">✅ Xizmat tugadi</button>
-        <button class="gbtn red" id="cancelBtn">❌ Navbatdan chiqish</button>
+      <div id="langBlock" class="langs hidden">
+        <button onclick="chooseLang('uz')">🇺🇿 O‘zbek</button>
+        <button onclick="chooseLang('ru')">🇷🇺 Русский</button>
+        <button onclick="chooseLang('en')">🇬🇧 English</button>
       </div>
 
-      <button class="btn2" id="refreshBtn">🔄 Yangilash</button>
-      <button class="btn" id="newBtn" style="background:#ff2c55">Yangi navbat olish</button>
-
-      <div class="receipt" id="receiptBox">
-        <div class="muted">🧾 Queue cheki (JPG + QR):</div>
-        <img id="receiptImg" alt="receipt" />
-      </div>
-
-      <div id="msg2" class="muted"></div>
+      <div id="afterChoose" class="small hidden"></div>
     </div>
   </div>
 
-<script>
-  const takeBox = document.getElementById("takeBox");
-  const ticketBox = document.getElementById("ticketBox");
-  const msg = document.getElementById("msg");
-  const msg2 = document.getElementById("msg2");
-
-  const ticketNo = document.getElementById("ticketNo");
-  const statusEl = document.getElementById("status");
-  const aheadEl = document.getElementById("ahead");
-  const waitingTotalEl = document.getElementById("waitingTotal");
-  const avgMinEl = document.getElementById("avgMin");
-  const etaEl = document.getElementById("eta");
-  const etaTimerEl = document.getElementById("etaTimer");
-  const receiptImg = document.getElementById("receiptImg");
-
-  let countdownSec = null;
-  let countdownTimer = null;
-
-  function showError(t){ msg.innerHTML = `<span class="err">${t}</span>`; }
-  function showOk(t){ msg.innerHTML = `<span class="ok">${t}</span>`; }
-  function showError2(t){ msg2.innerHTML = `<span class="err">${t}</span>`; }
-  function showOk2(t){ msg2.innerHTML = `<span class="ok">${t}</span>`; }
-
-  function setTicketMode(on){
-    if(on){
-      takeBox.classList.add("hide");
-      ticketBox.classList.remove("hide");
-    }else{
-      takeBox.classList.remove("hide");
-      ticketBox.classList.add("hide");
-    }
-  }
-
-  async function api(path, opts={}){
-    const res = await fetch(path, {
-      headers: {"Content-Type":"application/json"},
-      ...opts
-    });
-    const data = await res.json().catch(()=> ({}));
-    if(!res.ok) throw new Error(data.error || "Xatolik");
-    return data;
-  }
-
-  function startCountdown(seconds){
-    countdownSec = Number(seconds);
-    if (!Number.isFinite(countdownSec) || countdownSec <= 0) {
-      etaTimerEl.textContent = "";
-      clearInterval(countdownTimer);
-      countdownTimer = null;
-      return;
-    }
-
-    clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
-      countdownSec = Math.max(0, countdownSec - 1);
-      const m = Math.floor(countdownSec / 60);
-      const s = countdownSec % 60;
-      etaTimerEl.textContent = ` (⏳ ${m}:${String(s).padStart(2,"0")})`;
-      if (countdownSec <= 0) {
-        clearInterval(countdownTimer);
-        countdownTimer = null;
+  <script>
+    const TEXT = {
+      uz: {
+        welcome: "NAVBATUZga xush kelibsiz!<br/>NAVBATUZ bilan siz vaqtingizni tejaysiz.",
+        chosen: "✅ Til tanlandi: O‘zbek. (Keyingi bosqich: Viloyat → Tuman → Xizmat ...)"
+      },
+      ru: {
+        welcome: "Добро пожаловать в NAVBATUZ!<br/>С NAVBATUZ вы экономите время.",
+        chosen: "✅ Язык выбран: Русский. (Следующий шаг: Регион → Район → Услуга ...)"
+      },
+      en: {
+        welcome: "Welcome to NAVBATUZ!<br/>With NAVBATUZ you save time.",
+        chosen: "✅ Language selected: English. (Next: Region → District → Service ...)"
       }
-    }, 1000);
-  }
+    };
 
-  async function takeTicket(){
-    msg.textContent = "";
-    const name = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-
-    if(!name) return showError("Ism kiriting");
-    if(!phone) return showError("Telefon kiriting");
-
-    try{
-      const r = await api("/api/take", {
-        method:"POST",
-        body: JSON.stringify({ name, phone })
-      });
-
-      localStorage.setItem("ticket_id", r.ticket_id);
-      showOk("Navbat olindi!");
-      await loadTicket();
-    }catch(e){
-      showError(e.message);
-    }
-  }
-
-  function statusHuman(s){
-    if (s === "WAIT") return "KUTILYAPTI ⏳";
-    if (s === "NOW") return "NAVBATINGIZ ✅";
-    if (s === "SERVED") return "TUGADI ✅";
-    if (s === "CANCELLED") return "CHIQILDI ❌";
-    return s;
-  }
-
-  async function loadTicket(){
-    msg2.textContent = "";
-    const id = localStorage.getItem("ticket_id");
-    if(!id){
-      setTicketMode(false);
-      return;
-    }
-    try{
-      const r = await api(`/api/ticket?id=${encodeURIComponent(id)}`);
-      setTicketMode(true);
-
-      ticketNo.textContent = r.ticket_id;
-      statusEl.innerHTML = `<b>${statusHuman(r.status)}</b>`;
-      aheadEl.textContent = r.ahead;
-      waitingTotalEl.textContent = r.waiting_total;
-      avgMinEl.textContent = r.avg_service_min + " minut";
-      etaEl.textContent = r.eta_min + " minut";
-
-      // countdown = eta_min * 60
-      if (r.status === "NOW") {
-        etaEl.innerHTML = `<span class="ok">Hozir kirishingiz mumkin ✅</span>`;
-        startCountdown(0);
-      } else {
-        startCountdown(r.eta_min * 60);
+    function getWebSession() {
+      let id = localStorage.getItem("web_session");
+      if (!id) {
+        id = "ws_" + Math.random().toString(16).slice(2) + Date.now().toString(16);
+        localStorage.setItem("web_session", id);
       }
-
-      // receipt jpg
-      receiptImg.src = `/api/receipt?id=${encodeURIComponent(r.ticket_id)}&t=${Date.now()}`;
-    }catch(e){
-      localStorage.removeItem("ticket_id");
-      setTicketMode(false);
-      showError("Chipta topilmadi. Qaytadan navbat oling.");
+      return id;
     }
-  }
 
-  async function doAction(action){
-    const id = Number(localStorage.getItem("ticket_id"));
-    if (!id) return;
-    try{
-      const r = await api("/api/action", {
-        method:"POST",
-        body: JSON.stringify({ id, action })
-      });
-      if (action === "served") {
-        showOk2("✅ Xizmat tugadi. Vaqt saqlandi.");
-      } else if (action === "cancel") {
-        showOk2("❌ Navbatdan chiqdingiz.");
-        localStorage.removeItem("ticket_id");
-        setTicketMode(false);
-        return;
-      } else {
-        showOk2("✅ Qabul qilindi.");
+    const welcomeEl = document.getElementById("welcome");
+    const langBlock = document.getElementById("langBlock");
+    const afterChoose = document.getElementById("afterChoose");
+
+    async function runIntro() {
+      const seq = ["uz", "ru", "en"];
+      for (const lang of seq) {
+        welcomeEl.innerHTML = TEXT[lang].welcome;
+        await new Promise(r => setTimeout(r, 3500));
       }
-      await loadTicket();
-    }catch(e){
-      showError2(e.message);
+      langBlock.classList.remove("hidden");
+      welcomeEl.innerHTML = "Tilni tanlang / Выберите язык / Choose a language";
     }
-  }
 
-  document.getElementById("takeBtn").addEventListener("click", takeTicket);
-  document.getElementById("refreshBtn").addEventListener("click", loadTicket);
-  document.getElementById("newBtn").addEventListener("click", ()=>{
-    localStorage.removeItem("ticket_id");
-    setTicketMode(false);
-    msg.textContent = "";
-    msg2.textContent = "";
-  });
+    async function chooseLang(lang) {
+      localStorage.setItem("lang", lang);
+      langBlock.classList.add("hidden");
+      welcomeEl.innerHTML = TEXT[lang].welcome;
+      afterChoose.classList.remove("hidden");
+      afterChoose.textContent = TEXT[lang].chosen;
 
-  document.getElementById("arrivedBtn").addEventListener("click", ()=>doAction("arrived"));
-  document.getElementById("waitBtn").addEventListener("click", ()=>doAction("wait"));
-  document.getElementById("servedBtn").addEventListener("click", ()=>doAction("served"));
-  document.getElementById("cancelBtn").addEventListener("click", ()=>doAction("cancel"));
-
-  // URLda ?ticket= bo'lsa localStoragega yozib olamiz
-  (function(){
-    const u = new URL(location.href);
-    const t = u.searchParams.get("ticket");
-    if (t && /^\d+$/.test(t)) {
-      localStorage.setItem("ticket_id", t);
+      try {
+        await fetch("/api/lang", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ web_session: getWebSession(), lang })
+        });
+      } catch (e) {}
     }
-  })();
 
-  loadTicket();
-  setInterval(loadTicket, 7000);
-</script>
+    const saved = localStorage.getItem("lang");
+    if (saved && TEXT[saved]) {
+      chooseLang(saved);
+    } else {
+      runIntro();
+    }
+  </script>
 </body>
 </html>
