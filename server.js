@@ -134,8 +134,9 @@ async function startBot() {
     await ctx.reply((TEXT[lang] || TEXT.uz).welcome + "\n\n(Keyingi bosqich: Viloyat → Tuman → Xizmat ...)");
   });
 
-  await bot.launch();
-  console.log("Telegram bot started.");
+ await bot.telegram.deleteWebhook({ drop_pending_updates: true });
+await bot.launch();
+console.log("Telegram bot started.");
 }
 
 // ====== START ======
@@ -154,3 +155,4 @@ async function startBot() {
     process.exit(1);
   }
 })();
+
