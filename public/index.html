@@ -7,18 +7,12 @@
   <meta name="theme-color" content="#0b1020" />
   <style>
     :root{
-      --bg0:#070a14;
-      --bg1:#0b1020;
-      --card: rgba(255,255,255,.06);
-      --card2: rgba(255,255,255,.08);
+      --bg0:#070a14; --bg1:#0b1020;
       --stroke: rgba(255,255,255,.12);
-      --text:#eaf0ff;
-      --muted: rgba(234,240,255,.72);
-      --muted2: rgba(234,240,255,.55);
+      --text:#eaf0ff; --muted: rgba(234,240,255,.72); --muted2: rgba(234,240,255,.55);
       --shadow: 0 24px 80px rgba(0,0,0,.55);
       --radius: 22px;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -32,278 +26,94 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-
-    .noise{
-      pointer-events:none;
-      position:fixed; inset:0;
+    .noise{pointer-events:none; position:fixed; inset:0;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E");
-      mix-blend-mode: overlay;
-      opacity:.35;
+      mix-blend-mode: overlay; opacity:.35;
     }
-
-    .wrap{
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 26px 18px 40px;
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom:16px;
-    }
-
-    .logo{
-      display:flex; align-items:center; gap:10px;
-      user-select:none;
-    }
-    .mark{
-      width:40px; height:40px; border-radius:14px;
-      background:
-        radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.75), transparent 60%),
+    .wrap{max-width:980px;margin:0 auto;padding:26px 18px 40px;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;}
+    .logo{display:flex;align-items:center;gap:10px;user-select:none;}
+    .mark{width:40px;height:40px;border-radius:14px;
+      background: radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.75), transparent 60%),
         linear-gradient(135deg, rgba(120,82,255,.95), rgba(0,199,255,.65));
       box-shadow: 0 14px 30px rgba(120,82,255,.18);
       border:1px solid rgba(255,255,255,.16);
     }
-    .brand{
-      font-weight: 860;
-      letter-spacing: .6px;
-      font-size: 18px;
-      line-height: 1.1;
-    }
-    .tagline{
-      font-size: 12px;
-      color: var(--muted2);
-      margin-top:2px;
-    }
-
-    .pill{
-      display:flex; align-items:center; gap:10px;
-      padding:10px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
-      backdrop-filter: blur(10px);
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .dot{
-      width:8px;height:8px;border-radius:50%;
-      background: rgba(0,255,163,.9);
-      box-shadow: 0 0 0 6px rgba(0,255,163,.12);
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 16px;
-    }
-    @media (max-width: 920px){
-      .grid{grid-template-columns: 1fr}
-    }
-
-    .card{
-      border-radius: var(--radius);
-      border: 1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      position:relative;
-    }
-    .card::before{
-      content:"";
-      position:absolute; inset:-1px;
-      background:
-        radial-gradient(700px 220px at 20% 0%, rgba(120,82,255,.18), transparent 60%),
+    .brand{font-weight:860;letter-spacing:.6px;font-size:18px;line-height:1.1;}
+    .tagline{font-size:12px;color:var(--muted2);margin-top:2px;}
+    .pill{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);backdrop-filter: blur(10px);color:var(--muted);font-size:12px;}
+    .dot{width:8px;height:8px;border-radius:50%;background:rgba(0,255,163,.9);box-shadow:0 0 0 6px rgba(0,255,163,.12);}
+    .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;}
+    @media (max-width: 920px){.grid{grid-template-columns:1fr}}
+    .card{border-radius:var(--radius);border:1px solid var(--stroke);
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      box-shadow:var(--shadow);overflow:hidden;position:relative;}
+    .card::before{content:"";position:absolute;inset:-1px;
+      background:radial-gradient(700px 220px at 20% 0%, rgba(120,82,255,.18), transparent 60%),
         radial-gradient(600px 240px at 90% 30%, rgba(0,199,255,.12), transparent 60%);
-      pointer-events:none;
-      z-index:0;
-    }
-
-    .card-inner{
-      position:relative;
-      z-index:1;
-      padding: 20px 18px;
-    }
-
-    .hero-title{
-      font-size: 34px;
-      letter-spacing: .2px;
-      margin: 4px 0 8px;
-      line-height: 1.08;
-    }
-    .hero-sub{
-      margin:0 0 14px;
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 14px;
-      max-width: 58ch;
-    }
-
-    .welcome{
-      margin-top: 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(9,12,24,.55);
-      padding: 14px 14px;
-      min-height: 86px;
-      display:flex;
-      align-items:center;
-      gap: 12px;
-    }
-
-    .spark{
-      width: 40px; height: 40px; border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.12);
-      background:
-        radial-gradient(10px 10px at 30% 35%, rgba(255,255,255,.70), transparent 58%),
+      pointer-events:none;z-index:0;}
+    .card-inner{position:relative;z-index:1;padding:20px 18px;}
+    .hero-title{font-size:34px;letter-spacing:.2px;margin:4px 0 8px;line-height:1.08;}
+    .hero-sub{margin:0 0 14px;color:var(--muted);line-height:1.5;font-size:14px;max-width:58ch;}
+    .welcome{margin-top:12px;border-radius:18px;border:1px solid rgba(255,255,255,.10);background:rgba(9,12,24,.55);
+      padding:14px 14px;min-height:86px;display:flex;align-items:center;gap:12px;}
+    .spark{width:40px;height:40px;border-radius:16px;border:1px solid rgba(255,255,255,.12);
+      background:radial-gradient(10px 10px at 30% 35%, rgba(255,255,255,.70), transparent 58%),
         linear-gradient(135deg, rgba(0,255,163,.25), rgba(0,199,255,.18));
-      box-shadow: 0 18px 40px rgba(0,199,255,.08);
-      flex: 0 0 auto;
-    }
-    .welcome-text{
-      font-size: 16px;
-      line-height: 1.45;
-      color: rgba(234,240,255,.92);
-    }
-    .fade{
-      animation: fadeIn .28s ease both;
-    }
-    @keyframes fadeIn{
-      from{opacity:0; transform:translateY(4px)}
-      to{opacity:1; transform:translateY(0)}
-    }
+      box-shadow:0 18px 40px rgba(0,199,255,.08);flex:0 0 auto;}
+    .welcome-text{font-size:16px;line-height:1.45;color:rgba(234,240,255,.92);}
+    .fade{animation:fadeIn .28s ease both;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-    .lang-title{
-      margin: 16px 0 10px;
-      font-size: 13px;
-      color: var(--muted2);
-      display:flex; align-items:center; gap:10px;
-    }
-    .lang-title:before{
-      content:"";
-      height:1px; flex:1;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
-    }
-    .lang-title:after{
-      content:"";
-      height:1px; flex:1;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
-    }
+    .lang-title{margin:16px 0 10px;font-size:13px;color:var(--muted2);display:flex;align-items:center;gap:10px;}
+    .lang-title:before,.lang-title:after{content:"";height:1px;flex:1;background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);}
+    .lang-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+    @media (max-width: 520px){.lang-grid{grid-template-columns:1fr}}
+    .lang-card{cursor:pointer;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);
+      padding:14px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      transition:transform .12s ease, background .12s ease, border-color .12s ease;user-select:none;}
+    .lang-card:hover{transform:translateY(-1px);background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18);}
+    .lang-left{display:flex;align-items:center;gap:10px;}
+    .flag{width:38px;height:38px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);font-size:18px;}
+    .lang-name{font-weight:750;font-size:14px;}
+    .lang-hint{font-size:12px;color:var(--muted2);margin-top:1px;}
+    .chev{opacity:.55;font-size:18px;transform:translateY(-1px);}
 
-    .lang-grid{
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    @media (max-width: 520px){
-      .lang-grid{grid-template-columns: 1fr}
-    }
-
-    .lang-card{
-      cursor:pointer;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
-      padding: 14px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      user-select:none;
-    }
-    .lang-card:hover{
-      transform: translateY(-1px);
-      background: rgba(255,255,255,.07);
-      border-color: rgba(255,255,255,.18);
-    }
-    .lang-left{
-      display:flex; align-items:center; gap: 10px;
-    }
-    .flag{
-      width: 38px; height: 38px;
-      border-radius: 14px;
-      display:grid; place-items:center;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-      font-size: 18px;
-    }
-    .lang-name{
-      font-weight: 750;
-      font-size: 14px;
-    }
-    .lang-hint{
-      font-size: 12px;
-      color: var(--muted2);
-      margin-top: 1px;
-    }
-    .chev{
-      opacity:.55;
-      font-size: 18px;
-      transform: translateY(-1px);
-    }
-
-    .side{
-      padding: 18px;
-    }
-    .mini{
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-    .mini h3{
-      margin:0 0 8px;
-      font-size: 13px;
-      letter-spacing: .2px;
-      color: rgba(234,240,255,.88);
-    }
-    .mini p{
-      margin:0;
-      font-size: 12px;
-      color: var(--muted2);
-      line-height: 1.5;
-    }
-    .steps{
-      margin-top: 10px;
-      display:flex;
-      flex-direction:column;
-      gap: 8px;
-    }
-    .step{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(9,12,24,.40);
-      font-size: 12px;
-      color: var(--muted);
-    }
-    .badge{
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
-      color: rgba(234,240,255,.78);
-      white-space: nowrap;
-    }
-
-    .footer{
-      margin-top: 14px;
-      color: rgba(234,240,255,.45);
-      font-size: 11px;
-      text-align:center;
-    }
-
+    .side{padding:18px;}
+    .mini{border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);padding:14px;margin-bottom:12px;}
+    .mini h3{margin:0 0 8px;font-size:13px;letter-spacing:.2px;color:rgba(234,240,255,.88);}
+    .mini p{margin:0;font-size:12px;color:var(--muted2);line-height:1.5;}
+    .steps{margin-top:10px;display:flex;flex-direction:column;gap:8px;}
+    .step{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);background:rgba(9,12,24,.40);font-size:12px;color:var(--muted);}
+    .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05);color:rgba(234,240,255,.78);white-space:nowrap;}
+    .footer{margin-top:14px;color:rgba(234,240,255,.45);font-size:11px;text-align:center;}
     .hidden{display:none !important}
+
+    .pickers{margin-top:12px;display:grid;grid-template-columns:1fr;gap:10px;}
+    .field{border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);padding:12px 12px;}
+    .field-label{font-size:12px;color:var(--muted2);margin:0 0 8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+    .field-label strong{color:rgba(234,240,255,.90);font-weight:750;letter-spacing:.2px;}
+    select.select{width:100%;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(9,12,24,.55);
+      color:rgba(234,240,255,.95);padding:12px 12px;font-size:14px;outline:none;appearance:none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, rgba(234,240,255,.65) 50%),
+        linear-gradient(135deg, rgba(234,240,255,.65) 50%, transparent 50%),
+        linear-gradient(to right, rgba(255,255,255,.10), rgba(255,255,255,.10));
+      background-position: calc(100% - 20px) calc(1em + 2px), calc(100% - 15px) calc(1em + 2px), calc(100% - 42px) 50%;
+      background-size:5px 5px, 5px 5px, 1px 18px;
+      background-repeat:no-repeat;}
+    select.select:disabled{opacity:.55;cursor:not-allowed;}
+    .summaryline{margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.10);
+      background:rgba(9,12,24,.40);color:var(--muted);font-size:12px;line-height:1.45;}
+    .btn{margin-top:10px;width:100%;border-radius:16px;border:1px solid rgba(255,255,255,.14);
+      background:linear-gradient(135deg, rgba(120,82,255,.85), rgba(0,199,255,.45));
+      color:rgba(255,255,255,.95);padding:12px 14px;font-weight:780;cursor:pointer;transition:transform .12s ease, filter .12s ease;}
+    .btn:hover{transform:translateY(-1px);filter:brightness(1.05);}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none;}
   </style>
 </head>
 
@@ -327,14 +137,10 @@
     </div>
 
     <div class="grid">
-      <!-- Left / Main -->
       <div class="card">
         <div class="card-inner">
-          <div class="hero-title">Navbatni tez va oson oling.</div>
-          <p class="hero-sub">
-            NAVBATUZ orqali navbatni onlayn olib, vaqtingizni tejaysiz.
-            Avval tilni tanlang — keyin viloyat, tuman va xizmatni tanlashni boshlaysiz.
-          </p>
+          <div class="hero-title">NAVBATUZ</div>
+          <p class="hero-sub" id="heroSub">—</p>
 
           <div class="welcome" aria-live="polite">
             <div class="spark"></div>
@@ -345,35 +151,15 @@
 
           <div id="langGrid" class="lang-grid hidden">
             <div class="lang-card" onclick="chooseLang('uz')">
-              <div class="lang-left">
-                <div class="flag">🇺🇿</div>
-                <div>
-                  <div class="lang-name">O‘zbek</div>
-                  <div class="lang-hint">Davom etish</div>
-                </div>
-              </div>
+              <div class="lang-left"><div class="flag">🇺🇿</div><div><div class="lang-name">O‘zbek</div><div class="lang-hint">Davom etish</div></div></div>
               <div class="chev">›</div>
             </div>
-
             <div class="lang-card" onclick="chooseLang('ru')">
-              <div class="lang-left">
-                <div class="flag">🇷🇺</div>
-                <div>
-                  <div class="lang-name">Русский</div>
-                  <div class="lang-hint">Продолжить</div>
-                </div>
-              </div>
+              <div class="lang-left"><div class="flag">🇷🇺</div><div><div class="lang-name">Русский</div><div class="lang-hint">Продолжить</div></div></div>
               <div class="chev">›</div>
             </div>
-
             <div class="lang-card" onclick="chooseLang('en')">
-              <div class="lang-left">
-                <div class="flag">🇬🇧</div>
-                <div>
-                  <div class="lang-name">English</div>
-                  <div class="lang-hint">Continue</div>
-                </div>
-              </div>
+              <div class="lang-left"><div class="flag">🇬🇧</div><div><div class="lang-name">English</div><div class="lang-hint">Continue</div></div></div>
               <div class="chev">›</div>
             </div>
           </div>
@@ -381,77 +167,132 @@
           <div id="afterChoose" class="mini hidden" style="margin-top:14px;">
             <h3 id="afterTitle">✅ Ready</h3>
             <p id="afterText">—</p>
+
             <div class="steps" id="steps"></div>
+
+            <div id="pickers" class="pickers hidden">
+              <div class="field">
+                <div class="field-label"><strong id="lblRegion">📍 Region</strong><span id="hintRegion">—</span></div>
+                <select id="selRegion" class="select"><option value="">—</option></select>
+              </div>
+
+              <div class="field">
+                <div class="field-label"><strong id="lblUnit">🏙 District / City</strong><span id="hintUnit">—</span></div>
+                <select id="selUnit" class="select" disabled><option value="">—</option></select>
+              </div>
+
+              <div class="field">
+                <div class="field-label"><strong id="lblOrg">🧾 Organization</strong><span id="hintOrg">—</span></div>
+                <select id="selOrg" class="select" disabled><option value="">—</option></select>
+              </div>
+
+              <div id="selectionSummary" class="summaryline hidden"></div>
+              <button id="btnSaveSelection" class="btn" disabled onclick="saveSelection()">✅ Save</button>
+            </div>
           </div>
+
         </div>
       </div>
 
-      <!-- Right / Side -->
       <div class="card">
         <div class="card-inner side">
           <div class="mini">
-            <h3>⚡ Qanday ishlaydi?</h3>
-            <p>3 qadamda navbat oling: hududni tanlang, xizmatni tanlang, ticket oling.</p>
+            <h3 id="howTitle">⚡ Qanday ishlaydi?</h3>
+            <p id="howText">—</p>
             <div class="steps">
-              <div class="step">
-                <span>1) Til tanlash</span>
-                <span class="badge">Now</span>
-              </div>
-              <div class="step">
-                <span>2) Viloyat / Tuman</span>
-                <span class="badge">Next</span>
-              </div>
-              <div class="step">
-                <span>3) Xizmat / Punkt</span>
-                <span class="badge">Soon</span>
-              </div>
+              <div class="step"><span id="s1">1) Til tanlash</span><span class="badge" id="b1">Now</span></div>
+              <div class="step"><span id="s2">2) Viloyat / Tuman</span><span class="badge" id="b2">Next</span></div>
+              <div class="step"><span id="s3">3) Xizmat / Punkt</span><span class="badge" id="b3">Soon</span></div>
             </div>
           </div>
 
           <div class="mini">
-            <h3>🔒 Xavfsiz</h3>
-            <p>Til tanlovi localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.</p>
+            <h3 id="safeTitle">🔒 Xavfsiz</h3>
+            <p id="safeText">—</p>
           </div>
 
           <div class="mini">
-            <h3>📲 Telegram bot</h3>
-            <p>Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).</p>
+            <h3 id="tgTitle">📲 Telegram bot</h3>
+            <p id="tgText">—</p>
           </div>
 
           <div class="footer">© NAVBATUZ • Render + PostgreSQL • Web + Telegram</div>
         </div>
       </div>
+
     </div>
   </div>
 
   <script>
     const TEXT = {
       uz: {
-        hero: "Navbatni tez va oson oling.",
-        sub: "NAVBATUZ orqali navbatni onlayn olib, vaqtingizni tejaysiz. Avval tilni tanlang — keyin viloyat, tuman va xizmatni tanlashni boshlaysiz.",
-        welcome: "NAVBATUZga xush kelibsiz!<br/>NAVBATUZ bilan siz vaqtingizni tejaysiz.",
+        heroSub: "NAVBATUZ orqali navbatni onlayn olib, vaqtingizni tejaysiz. Avval tilni tanlang — keyin viloyat, tuman/shahar va muassasani tanlang.",
+        welcome: "NAVBATUZga xush kelibsiz!<br/>Tilni tanlang.",
         select: "Tilni tanlang",
         afterTitle: "✅ Tayyor",
-        afterText: "Til tanlandi: O‘zbek. Endi navbat olishni boshlashingiz mumkin.",
-        steps: ["📍 Viloyatni tanlang", "🏙 Tumanni tanlang", "🧾 Xizmatni tanlang", "🎟 Ticket oling"]
+        afterText: "Til tanlandi. Endi viloyat → tuman/shahar → muassasani tanlang.",
+        steps: ["📍 Viloyatni tanlang", "🏙 Tuman/Shaharni tanlang", "🧾 Muassasani tanlang", "🎟 Ticket oling"],
+        lblRegion: "📍 Viloyat",
+        lblUnit: "🏙 Tuman / Shahar",
+        lblOrg: "🧾 Muassasa",
+        hintPick: "Ro‘yxatdan tanlang",
+        hintNeedRegion: "Avval viloyat",
+        hintNeedUnit: "Avval tuman/shahar",
+        btnSave: "✅ Tanlovni saqlash",
+        emptyOrg: "(Hozircha muassasa yo‘q)",
+        summary: (r,u,o) => `Tanlandi: <b>${r}</b> → <b>${u}</b> → <b>${o}</b>`,
+        howTitle:"⚡ Qanday ishlaydi?",
+        howText:"3 qadamda: hududni tanlang, muassasani tanlang, ticket oling.",
+        safeTitle:"🔒 Xavfsiz",
+        safeText:"Til tanlovi localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.",
+        tgTitle:"📲 Telegram bot",
+        tgText:"Telegram bot orqali ham navbat olishingiz mumkin."
       },
       ru: {
-        hero: "Быстро и удобно получите очередь.",
-        sub: "С NAVBATUZ вы экономите время, получая очередь онлайн. Сначала выберите язык — затем регион, район и услугу.",
-        welcome: "Добро пожаловать в NAVBATUZ!<br/>С NAVBATUZ вы экономите время.",
+        heroSub: "С NAVBATUZ вы экономите время, получая очередь онлайн. Сначала выберите язык — затем область, район/город и учреждение.",
+        welcome: "Добро пожаловать в NAVBATUZ!<br/>Выберите язык.",
         select: "Выберите язык",
         afterTitle: "✅ Готово",
-        afterText: "Язык выбран: Русский. Теперь можно начать получение очереди.",
-        steps: ["📍 Выберите регион", "🏙 Выберите район", "🧾 Выберите услугу", "🎟 Получите талон"]
+        afterText: "Язык выбран. Теперь: область → район/город → учреждение.",
+        steps: ["📍 Выберите область", "🏙 Выберите район/город", "🧾 Выберите учреждение", "🎟 Получите талон"],
+        lblRegion: "📍 Область",
+        lblUnit: "🏙 Район / Город",
+        lblOrg: "🧾 Учреждение",
+        hintPick: "Выберите из списка",
+        hintNeedRegion: "Сначала область",
+        hintNeedUnit: "Сначала район/город",
+        btnSave: "✅ Сохранить выбор",
+        emptyOrg: "(Пока нет учреждений)",
+        summary: (r,u,o) => `Выбрано: <b>${r}</b> → <b>${u}</b> → <b>${o}</b>`,
+        howTitle:"⚡ Как работает?",
+        howText:"3 шага: выберите регион, выберите учреждение, получите талон.",
+        safeTitle:"🔒 Безопасно",
+        safeText:"Выбор языка хранится в localStorage. На сервер отправляются только нужные данные.",
+        tgTitle:"📲 Telegram бот",
+        tgText:"Очередь можно получить и через Telegram-бот."
       },
       en: {
-        hero: "Get your queue fast and easily.",
-        sub: "With NAVBATUZ you save time by taking a ticket online. Choose a language first — then pick region, district and service.",
-        welcome: "Welcome to NAVBATUZ!<br/>With NAVBATUZ you save time.",
+        heroSub: "With NAVBATUZ you save time by taking a ticket online. Choose a language first — then pick region, district/city and organization.",
+        welcome: "Welcome to NAVBATUZ!<br/>Choose a language.",
         select: "Choose a language",
         afterTitle: "✅ Ready",
-        afterText: "Language selected: English. You can start taking a ticket now.",
-        steps: ["📍 Choose region", "🏙 Choose district", "🧾 Choose service", "🎟 Get ticket"]
+        afterText: "Language selected. Next: region → district/city → organization.",
+        steps: ["📍 Choose region", "🏙 Choose district/city", "🧾 Choose organization", "🎟 Get ticket"],
+        lblRegion: "📍 Region",
+        lblUnit: "🏙 District / City",
+        lblOrg: "🧾 Organization",
+        hintPick: "Pick from list",
+        hintNeedRegion: "Select region first",
+        hintNeedUnit: "Select district/city first",
+        btnSave: "✅ Save selection",
+        emptyOrg: "(No organizations yet)",
+        summary: (r,u,o) => `Selected: <b>${r}</b> → <b>${u}</b> → <b>${o}</b>`,
+        howTitle:"⚡ How it works?",
+        howText:"3 steps: choose region, choose organization, get ticket.",
+        safeTitle:"🔒 Secure",
+        safeText:"Language is stored in localStorage. Only required data is sent to server.",
+        tgTitle:"📲 Telegram bot",
+        tgText:"You can also take a ticket via Telegram bot."
       }
     };
 
@@ -467,37 +308,245 @@
     const welcomeEl = document.getElementById("welcome");
     const langTitleEl = document.getElementById("langTitle");
     const langGridEl = document.getElementById("langGrid");
+
     const afterBox = document.getElementById("afterChoose");
     const afterTitle = document.getElementById("afterTitle");
     const afterText = document.getElementById("afterText");
     const stepsEl = document.getElementById("steps");
 
-    // update hero text
-    function setHero(lang){
-      const t = TEXT[lang] || TEXT.uz;
-      document.querySelector(".hero-title").textContent = t.hero;
-      document.querySelector(".hero-sub").textContent = t.sub;
+    const pickersEl = document.getElementById("pickers");
+    const selRegion = document.getElementById("selRegion");
+    const selUnit = document.getElementById("selUnit");
+    const selOrg = document.getElementById("selOrg");
+    const selectionSummary = document.getElementById("selectionSummary");
+    const btnSaveSelection = document.getElementById("btnSaveSelection");
+
+    const lblRegion = document.getElementById("lblRegion");
+    const lblUnit = document.getElementById("lblUnit");
+    const lblOrg = document.getElementById("lblOrg");
+    const hintRegion = document.getElementById("hintRegion");
+    const hintUnit = document.getElementById("hintUnit");
+    const hintOrg = document.getElementById("hintOrg");
+
+    const heroSub = document.getElementById("heroSub");
+
+    const howTitle = document.getElementById("howTitle");
+    const howText = document.getElementById("howText");
+    const safeTitle = document.getElementById("safeTitle");
+    const safeText = document.getElementById("safeText");
+    const tgTitle = document.getElementById("tgTitle");
+    const tgText = document.getElementById("tgText");
+
+    let GEO = null; // loaded from /geo.json
+
+    function getLang(){
+      const saved = localStorage.getItem("lang");
+      return (saved && TEXT[saved]) ? saved : "uz";
     }
+
+    function t(){ return TEXT[getLang()] || TEXT.uz; }
 
     function setWelcome(html){
       welcomeEl.classList.remove("fade");
-      // reflow
       void welcomeEl.offsetWidth;
       welcomeEl.innerHTML = html;
       welcomeEl.classList.add("fade");
     }
 
-    async function runIntro() {
-      // intro: UZ -> RU -> EN
-      const seq = ["uz", "ru", "en"];
-      for (const lang of seq) {
-        setHero(lang);
-        setWelcome(TEXT[lang].welcome);
-        await new Promise(r => setTimeout(r, 3200));
+    function applyUiTexts(){
+      const L = t();
+      heroSub.textContent = L.heroSub;
+      langTitleEl.textContent = L.select;
+
+      lblRegion.textContent = L.lblRegion;
+      lblUnit.textContent = L.lblUnit;
+      lblOrg.textContent = L.lblOrg;
+
+      hintRegion.textContent = L.hintPick;
+      hintUnit.textContent = L.hintNeedRegion;
+      hintOrg.textContent = L.hintNeedUnit;
+
+      btnSaveSelection.textContent = L.btnSave;
+
+      howTitle.textContent = L.howTitle;
+      howText.textContent = L.howText;
+      safeTitle.textContent = L.safeTitle;
+      safeText.textContent = L.safeText;
+      tgTitle.textContent = L.tgTitle;
+      tgText.textContent = L.tgText;
+    }
+
+    function nameByLang(obj){
+      const L = getLang();
+      return (obj && obj[L]) || (obj && obj.uz) || "";
+    }
+
+    function fillRegions(){
+      selRegion.innerHTML = `<option value="">—</option>`;
+      for (const r of GEO.regions) {
+        const opt = document.createElement("option");
+        opt.value = r.id; // Uzbek ID key
+        opt.textContent = nameByLang(r.name);
+        selRegion.appendChild(opt);
+      }
+    }
+
+    function fillUnits(regionId){
+      const L = t();
+      selUnit.innerHTML = `<option value="">—</option>`;
+      selOrg.innerHTML = `<option value="">—</option>`;
+      selOrg.disabled = true;
+
+      const region = GEO.regions.find(x => x.id === regionId);
+      const units = region ? region.units : [];
+
+      for (const u of units) {
+        const opt = document.createElement("option");
+        opt.value = nameByLang(u.name);   // display key
+        opt.dataset.type = u.type || "";
+        opt.textContent = nameByLang(u.name);
+        selUnit.appendChild(opt);
       }
 
-      // show language picker
-      langTitleEl.textContent = "Tilni tanlang / Выберите язык / Choose a language";
+      selUnit.disabled = false;
+      hintUnit.textContent = L.hintPick;
+      hintOrg.textContent = L.hintNeedUnit;
+    }
+
+    function fillOrgs(regionId, unitName){
+      const L = t();
+      selOrg.innerHTML = `<option value="">—</option>`;
+
+      const key = `${regionId}|${unitName}`;
+      const orgs = (GEO.orgsByUnit && GEO.orgsByUnit[key]) ? GEO.orgsByUnit[key] : [];
+
+      if (!orgs.length) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = L.emptyOrg;
+        selOrg.appendChild(opt);
+        selOrg.disabled = true;
+        hintOrg.textContent = L.emptyOrg;
+      } else {
+        for (const o of orgs) {
+          const opt = document.createElement("option");
+          opt.value = o.id;
+          opt.textContent = nameByLang(o.name);
+          selOrg.appendChild(opt);
+        }
+        selOrg.disabled = false;
+        hintOrg.textContent = L.hintPick;
+      }
+    }
+
+    function updateSummary(){
+      const L = t();
+      const regionId = selRegion.value;
+      const region = GEO.regions.find(x => x.id === regionId);
+      const regionLabel = region ? nameByLang(region.name) : "";
+
+      const unitLabel = selUnit.value;
+      const orgId = selOrg.value;
+      const org = (() => {
+        const key = `${regionId}|${unitLabel}`;
+        const arr = (GEO.orgsByUnit && GEO.orgsByUnit[key]) ? GEO.orgsByUnit[key] : [];
+        return arr.find(x => x.id === orgId);
+      })();
+
+      if (regionId && unitLabel && orgId && org) {
+        selectionSummary.classList.remove("hidden");
+        selectionSummary.innerHTML = L.summary(regionLabel, unitLabel, nameByLang(org.name));
+        btnSaveSelection.disabled = false;
+      } else {
+        selectionSummary.classList.add("hidden");
+        selectionSummary.innerHTML = "";
+        btnSaveSelection.disabled = true;
+      }
+    }
+
+    function resetPickers(){
+      selRegion.value = "";
+      selUnit.innerHTML = `<option value="">—</option>`;
+      selOrg.innerHTML = `<option value="">—</option>`;
+      selUnit.disabled = true;
+      selOrg.disabled = true;
+      selectionSummary.classList.add("hidden");
+      btnSaveSelection.disabled = true;
+
+      hintUnit.textContent = t().hintNeedRegion;
+      hintOrg.textContent = t().hintNeedUnit;
+    }
+
+    async function saveSelection(){
+      const regionId = selRegion.value;
+      const unitLabel = selUnit.value;
+      const orgId = selOrg.value;
+
+      const region = GEO.regions.find(x => x.id === regionId);
+      const regionLabel = region ? nameByLang(region.name) : "";
+
+      const payload = {
+        web_session: getWebSession(),
+        lang: getLang(),
+        region_id: regionId,
+        region_label: regionLabel,
+        unit_label: unitLabel,
+        org_id: orgId
+      };
+
+      localStorage.setItem("navbatuz_selection", JSON.stringify(payload));
+
+      try {
+        await fetch("/api/selection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+
+      setWelcome(`✅ OK<br/><b>${regionLabel}</b> → <b>${unitLabel}</b>`);
+    }
+
+    // Events
+    selRegion.addEventListener("change", () => {
+      selUnit.value = "";
+      selOrg.value = "";
+      selectionSummary.classList.add("hidden");
+      btnSaveSelection.disabled = true;
+
+      if (!selRegion.value) {
+        selUnit.disabled = true;
+        selOrg.disabled = true;
+        selUnit.innerHTML = `<option value="">—</option>`;
+        selOrg.innerHTML = `<option value="">—</option>`;
+        hintUnit.textContent = t().hintNeedRegion;
+        hintOrg.textContent = t().hintNeedUnit;
+        return;
+      }
+
+      fillUnits(selRegion.value);
+      updateSummary();
+    });
+
+    selUnit.addEventListener("change", () => {
+      selOrg.value = "";
+      selectionSummary.classList.add("hidden");
+      btnSaveSelection.disabled = true;
+
+      if (!selRegion.value || !selUnit.value) {
+        selOrg.disabled = true;
+        selOrg.innerHTML = `<option value="">—</option>`;
+        hintOrg.textContent = t().hintNeedUnit;
+        return;
+      }
+
+      fillOrgs(selRegion.value, selUnit.value);
+      updateSummary();
+    });
+
+    selOrg.addEventListener("change", updateSummary);
+
+    async function runIntro() {
       langTitleEl.classList.remove("hidden");
       langGridEl.classList.remove("hidden");
       setWelcome("Tilni tanlang / Выберите язык / Choose a language");
@@ -505,28 +554,49 @@
 
     async function chooseLang(lang) {
       localStorage.setItem("lang", lang);
+      applyUiTexts();
 
-      const t = TEXT[lang] || TEXT.uz;
-      setHero(lang);
-      setWelcome(t.welcome);
-
-      langTitleEl.textContent = t.select;
       langTitleEl.classList.remove("hidden");
       langGridEl.classList.add("hidden");
 
       afterBox.classList.remove("hidden");
-      afterTitle.textContent = t.afterTitle;
-      afterText.textContent = t.afterText;
+      afterTitle.textContent = t().afterTitle;
+      afterText.textContent = t().afterText;
 
       stepsEl.innerHTML = "";
-      for (const s of t.steps) {
+      t().steps.forEach((s, idx) => {
         const div = document.createElement("div");
         div.className = "step";
-        div.innerHTML = `<span>${s}</span><span class="badge">Next</span>`;
+        div.innerHTML = `<span>${s}</span><span class="badge">${idx === 0 ? "Now" : "Next"}</span>`;
         stepsEl.appendChild(div);
-      }
+      });
 
-      // optional: save to server
+      pickersEl.classList.remove("hidden");
+
+      // Fill from GEO
+      fillRegions();
+      resetPickers();
+
+      // restore selection
+      try {
+        const savedSel = JSON.parse(localStorage.getItem("navbatuz_selection") || "null");
+        if (savedSel && savedSel.region_id) {
+          selRegion.value = savedSel.region_id;
+          fillUnits(savedSel.region_id);
+
+          if (savedSel.unit_label) {
+            selUnit.value = savedSel.unit_label;
+            fillOrgs(savedSel.region_id, savedSel.unit_label);
+
+            if (savedSel.org_id) {
+              selOrg.value = savedSel.org_id;
+              updateSummary();
+            }
+          }
+        }
+      } catch(e){}
+
+      // optional: server lang
       try {
         await fetch("/api/lang", {
           method: "POST",
@@ -534,15 +604,33 @@
           body: JSON.stringify({ web_session: getWebSession(), lang })
         });
       } catch (e) {}
+
+      setWelcome(t().welcome);
     }
 
-    // boot
-    const saved = localStorage.getItem("lang");
-    if (saved && TEXT[saved]) {
-      chooseLang(saved);
-    } else {
-      runIntro();
+    window.chooseLang = chooseLang;
+    window.saveSelection = saveSelection;
+
+    async function boot(){
+      // load GEO
+      try {
+        const res = await fetch("/geo.json", { cache: "no-store" });
+        GEO = await res.json();
+      } catch (e) {
+        setWelcome("❌ geo.json topilmadi. Avval tools/build-geo.mjs ni ishga tushirib public/geo.json yarating.");
+        return;
+      }
+
+      const savedLang = localStorage.getItem("lang");
+      if (savedLang && TEXT[savedLang]) {
+        chooseLang(savedLang);
+      } else {
+        applyUiTexts();
+        runIntro();
+      }
     }
+
+    boot();
   </script>
 </body>
 </html>
