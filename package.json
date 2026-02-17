@@ -1,19 +1,19 @@
 {
   "name": "navbatuz",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "bot": "node bot.js"
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "express": "^4.19.2",
-    "pg": "^8.12.0",
+    "pg": "^8.11.5",
     "qrcode": "^1.5.4",
-    "telegraf": "^4.16.3"
-    "cors": "^2.8.5",
+    "cors": "^2.8.5"
   }
 }
-
