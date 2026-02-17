@@ -62,24 +62,82 @@ function validateOrgId(geo, orgId) {
 
 // --- DB init ---
 async function initDb() {
-  // gen_random_uuid() uchun extension avval:
+  // extension
   await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
 
+  // org_state yaratamiz
   await pool.query(`
     CREATE TABLE IF NOT EXISTS org_state (
       org_id TEXT PRIMARY KEY,
       next_number INTEGER NOT NULL DEFAULT 1,
-      current_number INTEGER NOT NULL DEFAULT 0, -- bu: oxirgi "served" bo'lgan raqam
+      current_number INTEGER NOT NULL DEFAULT 0,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
   `);
 
+  // eski schema bo‘lsa rename qilamiz
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='orgId'
+      ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='org_id'
+      ) THEN
+        ALTER TABLE org_state RENAME COLUMN "orgId" TO org_id;
+      END IF;
+    END $$;
+  `);
+
+  // agar org_id yo‘q bo‘lsa qo‘shamiz
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='org_id'
+      ) THEN
+        ALTER TABLE org_state ADD COLUMN org_id TEXT;
+      END IF;
+    END $$;
+  `);
+
+  // boshqa ustunlar ham yo‘q bo‘lsa qo‘shiladi
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='next_number'
+      ) THEN
+        ALTER TABLE org_state ADD COLUMN next_number INTEGER NOT NULL DEFAULT 1;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='current_number'
+      ) THEN
+        ALTER TABLE org_state ADD COLUMN current_number INTEGER NOT NULL DEFAULT 0;
+      END IF;
+
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='org_state' AND column_name='updated_at'
+      ) THEN
+        ALTER TABLE org_state ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      END IF;
+    END $$;
+  `);
+
+  // tickets jadvali
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tickets (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       org_id TEXT NOT NULL,
       number INTEGER NOT NULL,
-      status TEXT NOT NULL DEFAULT 'waiting', -- waiting|served|cancelled
+      status TEXT NOT NULL DEFAULT 'waiting',
       platform TEXT,
       user_id TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -88,11 +146,9 @@ async function initDb() {
     );
   `);
 
-  // Indexlar (tezlik uchun)
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_served_at ON tickets(org_id, served_at);`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org ON tickets(org_id);`);
 }
+
 
 // --- Avg service seconds (last 3-4 served intervals) ---
 async function computeAvgServiceSec(orgId) {
@@ -478,3 +534,4 @@ initDb()
     console.error("DB init error:", e);
     process.exit(1);
   });
+
