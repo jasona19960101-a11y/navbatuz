@@ -176,6 +176,56 @@
       color: rgba(234,240,255,.85);
     }
     .hidden{display:none !important;}
+
+    /* ===== Added: Ticket UI ===== */
+    .ticketBox{
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      padding:14px;
+    }
+    .ticketTop{
+      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+      margin-bottom:10px;
+    }
+    .ticketNo{
+      font-size:30px;font-weight:900;letter-spacing:.5px;line-height:1;
+    }
+    .ticketMeta{
+      font-size:12px;color:var(--muted2);line-height:1.45;
+    }
+    .kpiGrid{
+      display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;
+    }
+    .kpi{
+      border-radius:14px;border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      padding:10px 10px;
+    }
+    .kpi .k{font-size:11px;color:var(--muted2)}
+    .kpi .v{font-size:14px;font-weight:800;margin-top:4px}
+    .subActions{display:flex;gap:10px;margin-top:10px}
+    .btn2{
+      flex:1;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      padding:12px 12px;
+      border-radius:16px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    .btn2:active{transform:scale(.99)}
+    .warn{
+      margin-top:10px;
+      border-radius:14px;
+      border:1px solid rgba(255,199,0,.22);
+      background: rgba(255,199,0,.08);
+      padding:10px 12px;
+      color: rgba(255,240,210,.92);
+      font-size:12px;
+      line-height:1.5;
+    }
   </style>
 </head>
 
@@ -259,6 +309,58 @@
               <button id="saveBtn" class="btn" disabled>✅ Tanlovni saqlash</button>
               <div id="toast" class="toast hidden"></div>
 
+              <!-- ===== Added: NAVBAT / TICKET PANEL ===== -->
+              <div class="hr"></div>
+
+              <div class="ticketBox">
+                <div class="row" style="margin-bottom:8px;">
+                  <div class="label"><span class="icon">🎫</span><span id="lblTicket">Navbat</span></div>
+                  <span class="badge" id="ticketState">—</span>
+                </div>
+
+                <button id="takeBtn" class="btn" disabled>🎟 Navbat olish</button>
+
+                <div id="ticketInfo" class="hidden" style="margin-top:12px;">
+                  <div class="ticketTop">
+                    <div>
+                      <div class="ticketNo" id="ticketNo">—</div>
+                      <div class="ticketMeta" id="ticketMeta">—</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="badge" id="nowServingBadge">Now: —</div>
+                      <div class="ticketMeta" style="margin-top:8px;" id="etaText">ETA: —</div>
+                    </div>
+                  </div>
+
+                  <div class="kpiGrid">
+                    <div class="kpi">
+                      <div class="k">Oldinda</div>
+                      <div class="v" id="aheadKpi">—</div>
+                    </div>
+                    <div class="kpi">
+                      <div class="k">Keyinda</div>
+                      <div class="v" id="behindKpi">—</div>
+                    </div>
+                    <div class="kpi">
+                      <div class="k">O‘rtacha (3–4)</div>
+                      <div class="v" id="avgKpi">—</div>
+                    </div>
+                    <div class="kpi">
+                      <div class="k">Holat</div>
+                      <div class="v" id="statusKpi">—</div>
+                    </div>
+                  </div>
+
+                  <div id="warnBox" class="warn hidden"></div>
+
+                  <div class="subActions">
+                    <button id="refreshBtn" class="btn2">🔄 Yangilash</button>
+                    <button id="cancelBtn" class="btn2">🗑 Bekor</button>
+                  </div>
+                </div>
+              </div>
+              <!-- ===== /Added ===== -->
+
             </div>
           </div>
         </div>
@@ -309,7 +411,19 @@
         safe: "Tanlov localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.",
         bot: "Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).",
         saved: "✅ Saqlandi!",
-        notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q."
+        notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q.",
+
+        // Added
+        take: "🎟 Navbat olish",
+        ticket: "Navbat",
+        online: "Online • Ready",
+        offline: "Offline • Tekshirilyapti…",
+        taken: "✅ Navbat olindi!",
+        cancelled: "🗑 Navbat bekor qilindi.",
+        served: "🎉 Navbatingiz keldi!",
+        missed: "⚠️ Navbatingiz o‘tib ketgan. 5 ta keyingi navbat ichida saqlanadi.",
+        autoCancelled: "⛔ 5 tadan o‘tib ketdi. Navbat avtomat bekor qilindi.",
+        apiFail: "Server bilan aloqa yo‘q. Keyinroq urinib ko‘ring."
       },
       ru: {
         heroTitle: "Получите очередь быстро и удобно.",
@@ -329,7 +443,19 @@
         safe: "Выбор сохраняется в localStorage. На сервер отправляется только нужная информация.",
         bot: "Можно взять очередь и через Telegram-бот (быстро и удобно).",
         saved: "✅ Сохранено!",
-        notFoundOrg: "Пока нет учреждений для выбранного района/города."
+        notFoundOrg: "Пока нет учреждений для выбранного района/города.",
+
+        // Added
+        take: "🎟 Взять очередь",
+        ticket: "Очередь",
+        online: "Online • Ready",
+        offline: "Offline • Проверяем…",
+        taken: "✅ Очередь получена!",
+        cancelled: "🗑 Очередь отменена.",
+        served: "🎉 Ваша очередь подошла!",
+        missed: "⚠️ Вы пропустили очередь. Держим ещё в пределах 5 следующих.",
+        autoCancelled: "⛔ Превышено +5. Очередь автоматически отменена.",
+        apiFail: "Нет связи с сервером. Попробуйте позже."
       },
       en: {
         heroTitle: "Get your queue fast and easily.",
@@ -349,7 +475,19 @@
         safe: "Selection is stored in localStorage. Only required data is sent to the server.",
         bot: "You can also take a ticket via Telegram bot (fast and convenient).",
         saved: "✅ Saved!",
-        notFoundOrg: "No organizations for this district/city yet."
+        notFoundOrg: "No organizations for this district/city yet.",
+
+        // Added
+        take: "🎟 Take a ticket",
+        ticket: "Queue",
+        online: "Online • Ready",
+        offline: "Offline • Checking…",
+        taken: "✅ Ticket taken!",
+        cancelled: "🗑 Ticket cancelled.",
+        served: "🎉 It’s your turn!",
+        missed: "⚠️ You missed your turn. Keeping within next 5 numbers.",
+        autoCancelled: "⛔ Passed +5. Ticket auto-cancelled.",
+        apiFail: "Cannot reach server. Try again later."
       }
     };
 
@@ -380,6 +518,16 @@
       window.__toastTimer = setTimeout(()=>t.classList.add("hidden"), 2200);
     }
 
+    function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+    function fmtTimeFromMinutes(mins){
+      if (!isFinite(mins) || mins < 0) return "—";
+      const m = Math.round(mins);
+      if (m < 60) return `${m} min`;
+      const h = Math.floor(m/60);
+      const mm = m % 60;
+      return `${h} h ${mm} min`;
+    }
+
     // ====== STATE ======
     let CFG = null;
     let regions = [];
@@ -392,6 +540,82 @@
       unitId: localStorage.getItem("unitId") || "",
       orgId: localStorage.getItem("orgId") || ""
     };
+
+    // ===== Added: Ticket State =====
+    const TICKET_KEY = "navbatuz_ticket";
+    const AVG_KEY_PREFIX = "navbatuz_avg_"; // per org
+
+    let ticket = null; // { orgId, ticketId, number, createdAt, status }
+    let pollTimer = null;
+
+    function getT(lang){ return UI[lang] || UI.uz; }
+
+    function loadTicket(){
+      try{
+        const raw = localStorage.getItem(TICKET_KEY);
+        ticket = raw ? JSON.parse(raw) : null;
+      }catch(e){ ticket = null; }
+    }
+    function saveTicket(){
+      if (!ticket) localStorage.removeItem(TICKET_KEY);
+      else localStorage.setItem(TICKET_KEY, JSON.stringify(ticket));
+    }
+
+    function setOnlineBadge(isOnline){
+      const t = getT(state.lang);
+      $("statusText").textContent = isOnline ? t.online : t.offline;
+    }
+
+    // Rolling avg service time (seconds) from last 3-4 people:
+    // - If server provides avg, we use it.
+    // - Else we learn from nowServing increments timing.
+    function loadAvgState(orgId){
+      try{
+        const raw = localStorage.getItem(AVG_KEY_PREFIX + orgId);
+        return raw ? JSON.parse(raw) : { lastNowServing: null, lastTs: null, samples: [] };
+      }catch(e){
+        return { lastNowServing: null, lastTs: null, samples: [] };
+      }
+    }
+    function saveAvgState(orgId, obj){
+      localStorage.setItem(AVG_KEY_PREFIX + orgId, JSON.stringify(obj));
+    }
+    function updateLearnedAvg(orgId, nowServing){
+      const s = loadAvgState(orgId);
+      const ts = Date.now();
+
+      if (typeof nowServing === "number" && isFinite(nowServing)) {
+        if (s.lastNowServing !== null && nowServing > s.lastNowServing && s.lastTs) {
+          const diff = ts - s.lastTs; // ms for one step or multiple steps
+          const steps = nowServing - s.lastNowServing;
+          const per = diff / steps; // ms per person
+          const sec = Math.round(per/1000);
+
+          // keep last 4 samples
+          s.samples.push(sec);
+          s.samples = s.samples.slice(-4);
+        }
+
+        // refresh anchors
+        s.lastNowServing = nowServing;
+        s.lastTs = ts;
+
+        saveAvgState(orgId, s);
+      }
+
+      // compute avg (last 3-4)
+      const arr = (s.samples || []).slice(-4);
+      if (!arr.length) return null;
+      const avg = Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
+      return avg; // seconds
+    }
+
+    function getLearnedAvg(orgId){
+      const s = loadAvgState(orgId);
+      const arr = (s.samples || []).slice(-4);
+      if (!arr.length) return null;
+      return Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
+    }
 
     // ====== DATA LOADING ======
     async function loadJSON(url){
@@ -488,6 +712,10 @@
       $("howText").textContent = t.howText;
       $("safeText").textContent = t.safe;
       $("botText").textContent = t.bot;
+
+      // Added
+      $("lblTicket").textContent = t.ticket;
+      $("takeBtn").textContent = t.take;
     }
 
     function rebuildRegions(){
@@ -580,6 +808,338 @@
     function updateSaveBtn(){
       const ok = !!(state.lang && state.regionId && state.unitId && state.orgId);
       $("saveBtn").disabled = !ok;
+      // Added: take button enabled when org chosen
+      $("takeBtn").disabled = !ok || (ticket && ticket.orgId === state.orgId && ticket.status === "active");
+    }
+
+    // ===== Added: API (flexible) =====
+    async function apiPost(url, body){
+      const r = await fetch(url, {
+        method:"POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(body),
+        cache:"no-store"
+      });
+      if (!r.ok) throw new Error("API fail " + url);
+      return await r.json();
+    }
+    async function apiGet(url){
+      const r = await fetch(url, { cache:"no-store" });
+      if (!r.ok) throw new Error("API fail " + url);
+      return await r.json();
+    }
+
+    // We try multiple formats to be compatible with your backend.
+    function normalizeTicketTakeResponse(j){
+      // expected possible fields:
+      // - ticketId / id
+      // - number / ticketNo / seq
+      // - nowServing / current / serving
+      // - lastNumber / last / max
+      // - avgServiceSec / avg_service_sec / avg
+      const ticketId = j.ticketId ?? j.id ?? j.ticket_id ?? null;
+      const number = Number(j.number ?? j.ticketNo ?? j.seq ?? j.ticket_number ?? j.no);
+      return {
+        ticketId,
+        number: isFinite(number) ? number : null,
+        nowServing: Number(j.nowServing ?? j.current ?? j.serving ?? j.now ?? j.activeNumber),
+        lastNumber: Number(j.lastNumber ?? j.last ?? j.max ?? j.tail ?? j.lastIssued),
+        avgServiceSec: Number(j.avgServiceSec ?? j.avg_service_sec ?? j.avg ?? j.avgSeconds),
+        status: j.status ?? "active",
+        raw: j
+      };
+    }
+
+    function normalizeTicketStatusResponse(j){
+      // possible:
+      // { nowServing, lastNumber, queueLength, avgServiceSec, status }
+      const nowServing = Number(j.nowServing ?? j.current ?? j.serving ?? j.now ?? j.activeNumber);
+      const lastNumber = Number(j.lastNumber ?? j.last ?? j.max ?? j.tail ?? j.lastIssued);
+      const queueLength = Number(j.queueLength ?? j.length ?? j.total ?? j.waiting);
+      const avgServiceSec = Number(j.avgServiceSec ?? j.avg_service_sec ?? j.avg ?? j.avgSeconds);
+      return { nowServing, lastNumber, queueLength, avgServiceSec, status: j.status ?? null, raw: j };
+    }
+
+    function getTicketOrgSafe(){
+      // ticket belongs to selected org; if user changes org, we still show old ticket but disable take for other org
+      return (ticket && ticket.orgId) ? ticket.orgId : state.orgId;
+    }
+
+    function computeAheadBehind(nowServing, lastNumber, myNumber){
+      // nowServing: currently served number
+      // lastNumber: last issued number
+      // ahead: numbers before you (not served yet)
+      // behind: numbers after you
+      if (![nowServing,lastNumber,myNumber].every(x=>isFinite(x))) return { ahead:null, behind:null };
+      const ahead = Math.max(0, myNumber - nowServing);
+      const behind = Math.max(0, lastNumber - myNumber);
+      return { ahead, behind };
+    }
+
+    function setTicketUIVisible(on){
+      $("ticketInfo").classList.toggle("hidden", !on);
+    }
+
+    function setWarn(msg){
+      const w = $("warnBox");
+      if (!msg) { w.classList.add("hidden"); w.textContent=""; return; }
+      w.textContent = msg;
+      w.classList.remove("hidden");
+    }
+
+    function setTicketStateBadge(txt){
+      $("ticketState").textContent = txt || "—";
+    }
+
+    function renderTicketStatus(data){
+      // data: { nowServing, lastNumber, queueLength, avgServiceSec }
+      const lang = state.lang;
+      const t = getT(lang);
+
+      if (!ticket || !ticket.number) {
+        setTicketUIVisible(false);
+        setTicketStateBadge("—");
+        return;
+      }
+
+      const my = Number(ticket.number);
+      const nowServing = isFinite(data?.nowServing) ? data.nowServing : null;
+
+      // Update learned avg based on nowServing ticks
+      let learnedAvg = null;
+      const orgId = ticket.orgId;
+      if (orgId && isFinite(nowServing)) learnedAvg = updateLearnedAvg(orgId, nowServing);
+
+      // avg service seconds: prefer server, else learned
+      let avgSec = null;
+      if (isFinite(data?.avgServiceSec) && data.avgServiceSec > 0) avgSec = Math.round(data.avgServiceSec);
+      else avgSec = learnedAvg ?? getLearnedAvg(orgId);
+
+      // lastNumber: prefer server; else estimate with queueLength (if provided)
+      let lastNumber = isFinite(data?.lastNumber) ? data.lastNumber : null;
+      if (!isFinite(lastNumber) && isFinite(data?.queueLength) && isFinite(nowServing)) {
+        // if queueLength counts including nowServing..last => last = nowServing + queueLength - 1
+        lastNumber = nowServing + Math.max(0, data.queueLength - 1);
+      }
+
+      // KPIs
+      const { ahead, behind } = computeAheadBehind(nowServing, lastNumber, my);
+
+      // Determine status (served / active / missed / cancelled)
+      let uiStatus = "Active";
+      let badge = "Active";
+      let etaMin = null;
+
+      setWarn(null);
+
+      if (isFinite(nowServing)) {
+        $("nowServingBadge").textContent = "Now: " + nowServing;
+      } else {
+        $("nowServingBadge").textContent = "Now: —";
+      }
+
+      // If it's your turn:
+      if (isFinite(nowServing) && my === nowServing) {
+        uiStatus = t.served;
+        badge = "NOW";
+        setWarn(t.served);
+      }
+
+      // If you are ahead (not yet):
+      if (isFinite(nowServing) && my > nowServing) {
+        uiStatus = "Waiting";
+        badge = "Waiting";
+      }
+
+      // Missed logic: if my < nowServing
+      if (isFinite(nowServing) && my < nowServing) {
+        const diff = nowServing - my; // how many numbers passed after yours
+        if (diff <= 5) {
+          uiStatus = "Missed (grace)";
+          badge = "GRACE +" + (5 - diff);
+          setWarn(`${t.missed} (Qolgan: ${5 - diff} ta)`);
+        } else {
+          uiStatus = "Auto-cancelled";
+          badge = "CANCELLED";
+          setWarn(t.autoCancelled);
+          ticket.status = "cancelled";
+          saveTicket();
+          // try cancel on server (if endpoint exists)
+          tryCancelOnServer().catch(()=>{});
+        }
+      }
+
+      // ETA based on avgSec and ahead
+      if (avgSec && isFinite(ahead)) {
+        etaMin = (ahead * avgSec) / 60;
+      }
+
+      $("ticketNo").textContent = "#" + my;
+      $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${new Date(ticket.createdAt||Date.now()).toLocaleString()}`;
+      $("aheadKpi").textContent = (ahead===null ? "—" : ahead);
+      $("behindKpi").textContent = (behind===null ? "—" : behind);
+      $("avgKpi").textContent = avgSec ? `${avgSec}s` : "—";
+      $("statusKpi").textContent = uiStatus;
+      $("etaText").textContent = "ETA: " + (etaMin===null ? "—" : fmtTimeFromMinutes(etaMin));
+
+      setTicketStateBadge(badge);
+      setTicketUIVisible(true);
+
+      // take button state
+      $("takeBtn").disabled = true;
+    }
+
+    async function takeTicket(){
+      const lang = state.lang;
+      const t = getT(lang);
+
+      if (!state.orgId) return;
+
+      $("takeBtn").disabled = true;
+      setTicketStateBadge("…");
+
+      try{
+        setOnlineBadge(true);
+
+        // Most common: POST /api/take { orgId, lang, regionId, unitId }
+        const j = await apiPost("/api/take", {
+          orgId: state.orgId,
+          lang: state.lang,
+          regionId: state.regionId,
+          unitId: state.unitId
+        });
+
+        const norm = normalizeTicketTakeResponse(j);
+        if (!norm.number) throw new Error("Bad take response");
+
+        ticket = {
+          orgId: state.orgId,
+          ticketId: norm.ticketId || null,
+          number: norm.number,
+          createdAt: Date.now(),
+          status: "active"
+        };
+        saveTicket();
+
+        toast(t.taken);
+
+        // render immediately with data we already have
+        renderTicketStatus({
+          nowServing: isFinite(norm.nowServing) ? norm.nowServing : null,
+          lastNumber: isFinite(norm.lastNumber) ? norm.lastNumber : norm.number,
+          avgServiceSec: isFinite(norm.avgServiceSec) ? norm.avgServiceSec : null
+        });
+
+        startPolling();
+      }catch(e){
+        console.error(e);
+        setOnlineBadge(false);
+        toast(t.apiFail);
+        setTicketStateBadge("—");
+        $("takeBtn").disabled = false;
+      }
+    }
+
+    async function fetchTicketStatus(){
+      if (!ticket || !ticket.orgId) return;
+      const orgId = ticket.orgId;
+
+      // Try best-known endpoint patterns
+      // 1) /api/ticket?orgId=...&ticket=...
+      // 2) /api/ticket/{ticketId}
+      // 3) /api/ticket?orgId=...
+      let j = null;
+      try{
+        if (ticket.ticketId) {
+          try{
+            j = await apiGet(`/api/ticket/${encodeURIComponent(ticket.ticketId)}`);
+          }catch(_){
+            j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&ticketId=${encodeURIComponent(ticket.ticketId)}&number=${encodeURIComponent(ticket.number)}`);
+          }
+        } else {
+          j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&number=${encodeURIComponent(ticket.number)}`);
+        }
+      }catch(e){
+        // last fallback: org only
+        j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}`);
+      }
+
+      const norm = normalizeTicketStatusResponse(j);
+      setOnlineBadge(true);
+      renderTicketStatus(norm);
+    }
+
+    function startPolling(){
+      stopPolling();
+      // Poll every 5s for fresh queue status
+      pollTimer = setInterval(()=> {
+        fetchTicketStatus().catch((e)=>{
+          console.error(e);
+          setOnlineBadge(false);
+        });
+      }, 5000);
+
+      // initial fetch
+      fetchTicketStatus().catch((e)=>{
+        console.error(e);
+        setOnlineBadge(false);
+      });
+    }
+
+    function stopPolling(){
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = null;
+    }
+
+    async function tryCancelOnServer(){
+      if (!ticket) return;
+      // optional endpoint: POST /api/cancel { orgId, ticketId, number }
+      // if your backend uses different name, we keep it safe.
+      try{
+        await apiPost("/api/cancel", {
+          orgId: ticket.orgId,
+          ticketId: ticket.ticketId,
+          number: ticket.number
+        });
+      }catch(e){
+        // ignore
+      }
+    }
+
+    async function cancelTicket(){
+      const t = getT(state.lang);
+      if (!ticket) return;
+
+      $("cancelBtn").disabled = true;
+      try{
+        await tryCancelOnServer();
+      }catch(_){}
+      ticket.status = "cancelled";
+      saveTicket();
+      stopPolling();
+
+      setTicketStateBadge("CANCELLED");
+      $("statusKpi").textContent = "Cancelled";
+      setWarn(null);
+      toast(t.cancelled);
+
+      // enable take again if selection ok
+      updateSaveBtn();
+      $("takeBtn").disabled = !(state.lang && state.regionId && state.unitId && state.orgId);
+    }
+
+    function syncTicketButtons(){
+      // If there is an active ticket for current org => hide take
+      if (ticket && ticket.status === "active") {
+        $("takeBtn").disabled = true;
+        setTicketUIVisible(true);
+        setTicketStateBadge("Active");
+        startPolling();
+      } else {
+        setTicketUIVisible(false);
+        setTicketStateBadge("—");
+        updateSaveBtn();
+      }
     }
 
     // ====== EVENTS ======
@@ -593,6 +1153,11 @@
       rebuildUnits();
       rebuildOrgs();
       updateSaveBtn();
+
+      // rerender ticket labels
+      if (ticket && ticket.status === "active") {
+        fetchTicketStatus().catch(()=>{});
+      }
     });
 
     $("regionSel").addEventListener("change", () => {
@@ -624,17 +1189,31 @@
       state.orgId = $("orgSel").value;
       localStorage.setItem("orgId", state.orgId);
       updateSaveBtn();
+
+      // If ticket exists for different org, keep it but allow take for new org (only if no active ticket)
+      if (ticket && ticket.status === "active" && ticket.orgId !== state.orgId) {
+        // We don't auto-cancel; show warning to user via UI
+        setWarn(null);
+      }
     });
 
     $("saveBtn").addEventListener("click", async () => {
       const lang = state.lang;
       localStorage.setItem("navbatuz_selection", JSON.stringify(state));
-
-      // xohlasang serverga ham yuboramiz (keyinchalik)
-      // await fetch("/api/selection", { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(state) })
-
       toast((UI[lang]||UI.uz).saved);
+      updateSaveBtn();
     });
+
+    // Added events
+    $("takeBtn").addEventListener("click", () => takeTicket());
+    $("refreshBtn").addEventListener("click", () => {
+      fetchTicketStatus().catch((e)=>{
+        console.error(e);
+        setOnlineBadge(false);
+        toast(getT(state.lang).apiFail);
+      });
+    });
+    $("cancelBtn").addEventListener("click", () => cancelTicket());
 
     // ====== BOOT ======
     (async function boot(){
@@ -657,9 +1236,22 @@
         if (state.orgId) $("orgSel").value = state.orgId;
 
         updateSaveBtn();
+
+        // Added: restore ticket
+        loadTicket();
+        if (ticket && ticket.status === "active") {
+          // If selection differs, still keep ticket active
+          syncTicketButtons();
+        } else {
+          ticket = null;
+          saveTicket();
+          syncTicketButtons();
+        }
+
       } catch(e){
         console.error(e);
         toast("Data yuklanmadi. geo.json yoki internet tekshir.");
+        setOnlineBadge(false);
       }
     })();
   </script>
