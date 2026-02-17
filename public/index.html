@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>NAVBATUZ</title>
   <meta name="theme-color" content="#0b1020" />
-
   <style>
     :root{
       --bg0:#050712;
@@ -23,7 +22,6 @@
       --a2: rgba(0,199,255,.70);
       --a3: rgba(0,255,163,.35);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
@@ -37,7 +35,6 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-
     .noise{
       pointer-events:none;
       position:fixed; inset:0;
@@ -45,7 +42,6 @@
       mix-blend-mode: overlay;
       opacity:.35;
     }
-
     .wrap{max-width:1100px;margin:0 auto;padding:26px 18px 44px;}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;}
     .logo{display:flex;align-items:center;gap:12px;user-select:none}
@@ -59,7 +55,6 @@
     }
     .brand{font-weight:900;letter-spacing:.7px;font-size:18px;line-height:1.1;}
     .tagline{font-size:12px;color:var(--muted2);margin-top:2px}
-
     .pill{
       display:flex;align-items:center;gap:10px;
       padding:10px 12px;border-radius:999px;
@@ -74,10 +69,8 @@
       background: rgba(0,255,163,.95);
       box-shadow: 0 0 0 6px rgba(0,255,163,.12);
     }
-
     .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;}
     @media (max-width: 920px){.grid{grid-template-columns:1fr}}
-
     .card{
       border-radius: var(--r);
       border: 1px solid var(--stroke);
@@ -96,10 +89,8 @@
       z-index:0;
     }
     .card-inner{position:relative;z-index:1;padding:20px 18px;}
-
     .hero-title{font-size:34px;letter-spacing:.2px;margin:6px 0 8px;line-height:1.08;}
     .hero-sub{margin:0 0 14px;color:var(--muted);line-height:1.5;font-size:14px;max-width:62ch;}
-
     .panel{
       margin-top:14px;
       border-radius:18px;
@@ -107,11 +98,9 @@
       background: rgba(9,12,24,.50);
       padding:14px 14px;
     }
-
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
     .label{font-size:12px;color:var(--muted2);display:flex;gap:8px;align-items:center;}
     .label .icon{opacity:.9}
-
     .select{
       width:100%;
       appearance:none;
@@ -129,10 +118,8 @@
       box-shadow: 0 0 0 4px rgba(0,199,255,.12);
     }
     option{background:#0b1020;color:#eaf0ff;}
-
     .hint{font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5}
     .hr{height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);margin:12px 0;}
-
     .btn{
       width:100%;
       border:0;
@@ -149,7 +136,6 @@
     }
     .btn:active{transform:scale(.99)}
     .btn[disabled]{opacity:.55;cursor:not-allowed}
-
     .side .mini{
       border-radius:18px;border:1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.04);
@@ -176,8 +162,6 @@
       color: rgba(234,240,255,.85);
     }
     .hidden{display:none !important;}
-
-    /* ===== Ticket UI ===== */
     .ticketBox{
       border-radius:18px;
       border:1px solid rgba(255,255,255,.12);
@@ -329,6 +313,7 @@
                     <div style="text-align:right;">
                       <div class="badge" id="nowServingBadge">Now: —</div>
                       <div class="ticketMeta" style="margin-top:8px;" id="etaText">ETA: —</div>
+                      <div class="ticketMeta" style="margin-top:4px;" id="countdownText">Countdown: —</div>
                     </div>
                   </div>
 
@@ -375,8 +360,8 @@
           </div>
 
           <div class="mini">
-            <h3>🔒 Xavfsiz</h3>
-            <p id="safeText">Tanlov localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.</p>
+            <h3>🔔 Bildirishnoma</h3>
+            <p id="notifText">Navbatingiz 10 ta qolganda va bekor bo‘lsa avtomatik xabar beradi (browser permission kerak).</p>
           </div>
 
           <div class="mini">
@@ -391,15 +376,12 @@
   </div>
 
   <script>
-    // ✅ IMPORTANT: always same-origin API (Render)
     const API_BASE = window.location.origin;
 
-    // ====== UI TEXTS ======
     const UI = {
       uz: {
         heroTitle: "Navbatni tez va oson oling.",
         heroSub: "Tilni tanlang, keyin viloyat → tuman/shahar → muassasani ro‘yxatdan (scroll/select) tanlang.",
-        status: "Online • Ready",
         lblLang: "Til",
         lblRegion: "Viloyat",
         lblUnit: "Tuman/Shahar",
@@ -411,7 +393,6 @@
         save: "✅ Tanlovni saqlash",
         howTitle: "⚡ Qanday ishlaydi?",
         howText: "Til → Viloyat → Tuman/Shahar → Muassasa",
-        safe: "Tanlov localStorage’da saqlanadi. Serverga faqat kerakli ma’lumot yuboriladi.",
         bot: "Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).",
         saved: "✅ Saqlandi!",
         notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q.",
@@ -424,12 +405,14 @@
         served: "🎉 Navbatingiz keldi!",
         missed: "⚠️ Navbatingiz o‘tib ketgan. 5 ta keyingi navbat ichida saqlanadi.",
         autoCancelled: "⛔ 5 tadan o‘tib ketdi. Navbat avtomat bekor qilindi.",
-        apiFail: "Server bilan aloqa yo‘q. Keyinroq urinib ko‘ring."
+        apiFail: "Server bilan aloqa yo‘q. Keyinroq urinib ko‘ring.",
+        notif10: "🔔 Navbatingizga 10 ta qoldi!",
+        notifCancelled: "⛔ Navbatingiz bekor qilindi.",
+        notifNow: "✅ Navbatingiz keldi!"
       },
       ru: {
         heroTitle: "Получите очередь быстро и удобно.",
         heroSub: "Сначала выберите язык, затем область → район/город → учреждение (всё через список/scroll).",
-        status: "Online • Ready",
         lblLang: "Язык",
         lblRegion: "Область",
         lblUnit: "Район/Город",
@@ -441,7 +424,6 @@
         save: "✅ Сохранить выбор",
         howTitle: "⚡ Как это работает?",
         howText: "Язык → Область → Район/Город → Учреждение",
-        safe: "Выбор сохраняется в localStorage. На сервер отправляется только нужная информация.",
         bot: "Можно взять очередь и через Telegram-бот (быстро и удобно).",
         saved: "✅ Сохранено!",
         notFoundOrg: "Пока нет учреждений для выбранного района/города.",
@@ -454,12 +436,14 @@
         served: "🎉 Ваша очередь подошла!",
         missed: "⚠️ Вы пропустили очередь. Держим ещё в пределах 5 следующих.",
         autoCancelled: "⛔ Превышено +5. Очередь автоматически отменена.",
-        apiFail: "Нет связи с сервером. Попробуйте позже."
+        apiFail: "Нет связи с сервером. Попробуйте позже.",
+        notif10: "🔔 До вашей очереди осталось 10!",
+        notifCancelled: "⛔ Ваша очередь отменена.",
+        notifNow: "✅ Ваша очередь подошла!"
       },
       en: {
         heroTitle: "Get your queue fast and easily.",
         heroSub: "Pick language first, then choose region → district/city → organization (all via scroll/select).",
-        status: "Online • Ready",
         lblLang: "Language",
         lblRegion: "Region",
         lblUnit: "District/City",
@@ -471,7 +455,6 @@
         save: "✅ Save selection",
         howTitle: "⚡ How it works?",
         howText: "Language → Region → District/City → Organization",
-        safe: "Selection is stored in localStorage. Only required data is sent to the server.",
         bot: "You can also take a ticket via Telegram bot (fast and convenient).",
         saved: "✅ Saved!",
         notFoundOrg: "No organizations for this district/city yet.",
@@ -484,11 +467,13 @@
         served: "🎉 It’s your turn!",
         missed: "⚠️ You missed your turn. Keeping within next 5 numbers.",
         autoCancelled: "⛔ Passed +5. Ticket auto-cancelled.",
-        apiFail: "Cannot reach server. Try again later."
+        apiFail: "Cannot reach server. Try again later.",
+        notif10: "🔔 Only 10 left before your turn!",
+        notifCancelled: "⛔ Your ticket was cancelled.",
+        notifNow: "✅ It’s your turn!"
       }
     };
 
-    // ===== Helpers =====
     const $ = (id) => document.getElementById(id);
     const normKey = (s) => (s || "").toString().trim();
 
@@ -498,7 +483,6 @@
       opt0.value = "";
       opt0.textContent = placeholder;
       sel.appendChild(opt0);
-
       for (const it of items) {
         const o = document.createElement("option");
         o.value = it.value;
@@ -524,7 +508,48 @@
       return `${h} h ${mm} min`;
     }
 
-    // ===== State =====
+    function fmtCountdown(ms){
+      if (!Number.isFinite(ms) || ms <= 0) return "00:00:00";
+      let s = Math.floor(ms / 1000);
+      const days = Math.floor(s / 86400); s -= days*86400;
+      const hrs = Math.floor(s / 3600); s -= hrs*3600;
+      const mins = Math.floor(s / 60); s -= mins*60;
+      const pad = (n)=> String(n).padStart(2,"0");
+      if (days > 0) return `${days}d ${pad(hrs)}:${pad(mins)}:${pad(s)}`;
+      return `${pad(hrs)}:${pad(mins)}:${pad(s)}`;
+    }
+
+    // ===== Notifications =====
+    function getT(lang){ return UI[lang] || UI.uz; }
+
+    async function ensureNotifPermission(){
+      if (!("Notification" in window)) return false;
+      if (Notification.permission === "granted") return true;
+      if (Notification.permission === "denied") return false;
+      try{
+        const p = await Notification.requestPermission();
+        return p === "granted";
+      }catch(e){ return false; }
+    }
+
+    function pushNotif(title, body, tag){
+      const t = getT(state.lang);
+      if (!("Notification" in window)) {
+        toast(body || title);
+        return;
+      }
+      if (Notification.permission !== "granted") {
+        toast(body || title);
+        return;
+      }
+      try{
+        new Notification(title, { body, tag });
+      }catch(e){
+        toast(body || title);
+      }
+    }
+
+    // ===== State/data =====
     let CFG = null;
     let regions = [];
     let unitsByRegionId = new Map();
@@ -541,9 +566,15 @@
     const TICKET_KEY = "navbatuz_ticket";
     const AVG_KEY_PREFIX = "navbatuz_avg_";
     let ticket = null;
-    let pollTimer = null;
 
-    function getT(lang){ return UI[lang] || UI.uz; }
+    // countdown internals
+    let pollTimer = null;
+    let countdownTimer = null;
+    let etaEndTs = null; // Date.now()+etaMs
+    let lastAhead = null;
+    let notified10 = false;
+    let notifiedNow = false;
+    let notifiedCancelled = false;
 
     function loadTicket(){
       try{
@@ -561,7 +592,7 @@
       $("statusText").textContent = isOnline ? t.online : t.offline;
     }
 
-    // ===== API helpers (always same-origin) =====
+    // ===== API =====
     async function apiGet(path){
       const r = await fetch(API_BASE + path, { cache:"no-store" });
       if (!r.ok) throw new Error("API GET fail " + path);
@@ -576,6 +607,33 @@
       });
       if (!r.ok) throw new Error("API POST fail " + path);
       return await r.json();
+    }
+
+    // ===== fetch JSON with fallback (fix 404 master/main) =====
+    async function fetchJsonSmart(url){
+      const tries = [];
+      if (url) tries.push(url);
+
+      // master -> main
+      if (url && url.includes("/master/")) tries.push(url.replace("/master/","/main/"));
+      if (url && url.includes("/main/")) tries.push(url.replace("/main/","/master/"));
+
+      // JSON -> json (case)
+      if (url && url.includes("/JSON/")) tries.push(url.replace("/JSON/","/json/"));
+      if (url && url.includes("/json/")) tries.push(url.replace("/json/","/JSON/"));
+
+      // remove double slashes
+      const uniq = [...new Set(tries)].filter(Boolean);
+
+      let lastErr = null;
+      for (const u of uniq){
+        try{
+          const res = await fetch(u, { cache:"no-store" });
+          if (!res.ok) { lastErr = new Error(`Fetch ${u} -> ${res.status}`); continue; }
+          return await res.json();
+        }catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error("fetchJsonSmart failed");
     }
 
     // ===== Rolling avg learning (client side fallback) =====
@@ -593,7 +651,6 @@
     function updateLearnedAvg(orgId, nowServing){
       const s = loadAvgState(orgId);
       const ts = Date.now();
-
       if (typeof nowServing === "number" && isFinite(nowServing)) {
         if (s.lastNowServing !== null && nowServing > s.lastNowServing && s.lastTs) {
           const diff = ts - s.lastTs;
@@ -607,7 +664,6 @@
         s.lastTs = ts;
         saveAvgState(orgId, s);
       }
-
       const arr = (s.samples || []).slice(-4);
       if (!arr.length) return null;
       return Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
@@ -646,18 +702,18 @@
     }
 
     async function loadAllData(){
-      // ✅ FIX: geo.json from SERVER (not static file)
       CFG = await apiGet("/api/geo");
       orgsByUzKey = CFG.orgsByUnitUzKey || {};
 
-      regions = (await (await fetch(CFG.sources.regions, { cache:"no-store" })).json()).map(toRegion);
+      const regionsRaw = await fetchJsonSmart(CFG.sources?.regions);
+      regions = (Array.isArray(regionsRaw) ? regionsRaw : []).map(toRegion);
 
-      const districtsRaw = await (await fetch(CFG.sources.districts, { cache:"no-store" })).json();
+      const districtsRaw = await fetchJsonSmart(CFG.sources?.districts);
       const districts = (Array.isArray(districtsRaw) ? districtsRaw : []).map(x => toUnit(x, "district"));
 
       let cities = [];
       try {
-        const citiesRaw = await (await fetch(CFG.sources.cities, { cache:"no-store" })).json();
+        const citiesRaw = await fetchJsonSmart(CFG.sources?.cities);
         cities = (Array.isArray(citiesRaw) ? citiesRaw : []).map(x => toUnit(x, "city"));
       } catch(e) {
         cities = [];
@@ -669,7 +725,6 @@
         if (!unitsByRegionId.has(u.region_id)) unitsByRegionId.set(u.region_id, []);
         unitsByRegionId.get(u.region_id).push(u);
       }
-
       for (const [rid, arr] of unitsByRegionId.entries()) {
         arr.sort((a,b)=> (a.name_uz || "").localeCompare(b.name_uz || ""));
       }
@@ -696,7 +751,6 @@
       $("saveBtn").textContent = t.save;
       $("howTitle").textContent = t.howTitle;
       $("howText").textContent = t.howText;
-      $("safeText").textContent = t.safe;
       $("botText").textContent = t.bot;
 
       $("lblTicket").textContent = t.ticket;
@@ -800,7 +854,6 @@
       $("saveBtn").disabled = !ok;
 
       const hasActive = (ticket && ticket.status === "active");
-      // faqat 1ta aktiv ticket bo'lsin (oddiy MVP)
       $("takeBtn").disabled = !ok || hasActive;
     }
 
@@ -811,16 +864,65 @@
       return { ahead, behind };
     }
 
+    function resetNotifsIfNewTicket(){
+      notified10 = false;
+      notifiedNow = false;
+      notifiedCancelled = false;
+    }
+
+    function startCountdown(){
+      stopCountdown();
+      countdownTimer = setInterval(()=>{
+        if (!etaEndTs) { $("countdownText").textContent = "Countdown: —"; return; }
+        const left = etaEndTs - Date.now();
+        $("countdownText").textContent = "Countdown: " + (left <= 0 ? "00:00:00" : fmtCountdown(left));
+      }, 1000);
+    }
+    function stopCountdown(){
+      if (countdownTimer) clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+
+    function maybeNotify(ahead, statusKpiText, badge){
+      const t = getT(state.lang);
+      if (!ticket || ticket.status !== "active") return;
+
+      // 10 ta oldin
+      if (ahead === 10 && !notified10) {
+        notified10 = true;
+        pushNotif("NAVBATUZ", t.notif10, "navbatuz-10");
+      }
+
+      // navbat keldi
+      if (badge === "NOW" && !notifiedNow) {
+        notifiedNow = true;
+        pushNotif("NAVBATUZ", t.notifNow, "navbatuz-now");
+      }
+
+      // cancelled
+      if ((badge === "CANCELLED") && !notifiedCancelled) {
+        notifiedCancelled = true;
+        pushNotif("NAVBATUZ", t.notifCancelled, "navbatuz-cancel");
+      }
+    }
+
     function renderTicketStatus(data){
       const t = getT(state.lang);
+
       if (!ticket || !ticket.number) {
         setTicketUIVisible(false);
         setTicketStateBadge("—");
+        $("etaText").textContent = "ETA: —";
+        $("countdownText").textContent = "Countdown: —";
+        stopCountdown();
         return;
       }
 
       const my = Number(ticket.number);
       const nowServing = isFinite(data?.nowServing) ? data.nowServing : null;
+
+      // server ticket status (missed/cancelled/served) bo'lsa olamiz:
+      const serverTicketStatus = data?.ticket?.status || null;
 
       let learnedAvg = null;
       const orgId = ticket.orgId;
@@ -831,7 +933,6 @@
       else avgSec = learnedAvg ?? getLearnedAvg(orgId);
 
       let lastNumber = isFinite(data?.lastNumber) ? data.lastNumber : my;
-
       const { ahead, behind } = computeAheadBehind(nowServing, lastNumber, my);
 
       let uiStatus = "Waiting";
@@ -839,35 +940,70 @@
       let etaMin = null;
 
       setWarn(null);
-
       $("nowServingBadge").textContent = isFinite(nowServing) ? ("Now: " + nowServing) : "Now: —";
 
-      if (isFinite(nowServing) && my === nowServing) {
+      // ✅ serverdan cancelled/missed kelgan bo'lsa shuni ustun qo'yamiz
+      if (serverTicketStatus === "cancelled") {
+        uiStatus = "Auto-cancelled";
+        badge = "CANCELLED";
+        setWarn(t.autoCancelled);
+        ticket.status = "cancelled";
+        saveTicket();
+        stopPolling();
+        updateSaveBtn();
+      } else if (serverTicketStatus === "served") {
         uiStatus = t.served;
         badge = "NOW";
         setWarn(t.served);
-      } else if (isFinite(nowServing) && my > nowServing) {
-        uiStatus = "Waiting";
-        badge = "Waiting";
-      } else if (isFinite(nowServing) && my < nowServing) {
-        const diff = nowServing - my;
-        if (diff <= 5) {
-          uiStatus = "Missed (grace)";
-          badge = "GRACE";
-          setWarn(`${t.missed} (Qolgan: ${5 - diff} ta)`);
+      } else if (serverTicketStatus === "missed") {
+        uiStatus = "Missed (grace)";
+        badge = "GRACE";
+        if (isFinite(nowServing)) {
+          const diff = nowServing - my;
+          const leftGrace = Math.max(0, 5 - diff);
+          setWarn(`${t.missed} (Qolgan: ${leftGrace} ta)`);
         } else {
-          uiStatus = "Auto-cancelled";
-          badge = "CANCELLED";
-          setWarn(t.autoCancelled);
-          ticket.status = "cancelled";
-          saveTicket();
-          tryCancelOnServer().catch(()=>{});
-          stopPolling();
-          updateSaveBtn();
+          setWarn(t.missed);
+        }
+      } else {
+        // client logic fallback
+        if (isFinite(nowServing) && my === nowServing) {
+          uiStatus = t.served;
+          badge = "NOW";
+          setWarn(t.served);
+        } else if (isFinite(nowServing) && my > nowServing) {
+          uiStatus = "Waiting";
+          badge = "Waiting";
+        } else if (isFinite(nowServing) && my < nowServing) {
+          const diff = nowServing - my;
+          if (diff <= 5) {
+            uiStatus = "Missed (grace)";
+            badge = "GRACE";
+            setWarn(`${t.missed} (Qolgan: ${5 - diff} ta)`);
+          } else {
+            uiStatus = "Auto-cancelled";
+            badge = "CANCELLED";
+            setWarn(t.autoCancelled);
+            ticket.status = "cancelled";
+            saveTicket();
+            tryCancelOnServer().catch(()=>{});
+            stopPolling();
+            updateSaveBtn();
+          }
         }
       }
 
       if (avgSec && isFinite(ahead)) etaMin = (ahead * avgSec) / 60;
+
+      // countdown end time
+      if (avgSec && isFinite(ahead)) {
+        const etaMs = Math.max(0, Math.round(ahead * avgSec * 1000));
+        etaEndTs = Date.now() + etaMs;
+        startCountdown();
+      } else {
+        etaEndTs = null;
+        stopCountdown();
+      }
 
       $("ticketNo").textContent = "#" + my;
       $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${new Date(ticket.createdAt||Date.now()).toLocaleString()}`;
@@ -880,6 +1016,10 @@
       setTicketStateBadge(badge);
       setTicketUIVisible(true);
       $("takeBtn").disabled = true;
+
+      // notifications
+      if (ahead !== null) lastAhead = ahead;
+      maybeNotify(ahead, uiStatus, badge);
     }
 
     // ===== Ticket API logic =====
@@ -891,12 +1031,11 @@
       setTicketStateBadge("…");
 
       try{
-        // ✅ backend kutgan format
-       const j = await apiPost("/api/take", {
-  orgId: state.orgId,
-  platform: "web",
-  userId: null
-});
+        const j = await apiPost("/api/take", {
+          orgId: state.orgId,
+          platform: "web",
+          userId: null
+        });
 
         if (!j || !j.ok) throw new Error(j?.error || "take failed");
 
@@ -915,12 +1054,15 @@
           status: "active"
         };
         saveTicket();
+        resetNotifsIfNewTicket();
 
         toast(t.taken);
         setOnlineBadge(true);
 
-        renderTicketStatus({ nowServing, lastNumber, avgServiceSec });
+        // notification permission so'raymiz (faqat ticket olinganda)
+        ensureNotifPermission().catch(()=>{});
 
+        renderTicketStatus({ nowServing, lastNumber, avgServiceSec, ticket: j.ticket || null });
         startPolling();
       }catch(e){
         console.error(e);
@@ -943,8 +1085,7 @@
           j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&number=${encodeURIComponent(ticket.number)}`);
         }
       } catch (e) {
-        // fallback org-only
-        j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}`);
+        j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&number=${encodeURIComponent(ticket.number)}`);
       }
 
       if (!j || !j.ok) throw new Error(j?.error || "status fail");
@@ -954,7 +1095,7 @@
       const avgServiceSec = Number(j.avgServiceSec ?? j.ticket?.avgServiceSec ?? null);
 
       setOnlineBadge(true);
-      renderTicketStatus({ nowServing, lastNumber, avgServiceSec });
+      renderTicketStatus({ nowServing, lastNumber, avgServiceSec, ticket: j.ticket || null });
     }
 
     function startPolling(){
@@ -975,6 +1116,7 @@
     function stopPolling(){
       if (pollTimer) clearInterval(pollTimer);
       pollTimer = null;
+      stopCountdown();
     }
 
     async function tryCancelOnServer(){
@@ -984,9 +1126,7 @@
           orgId: ticket.orgId,
           number: ticket.number
         });
-      }catch(e){
-        // ignore
-      }
+      }catch(e){}
     }
 
     async function cancelTicket(){
@@ -1004,6 +1144,7 @@
       $("statusKpi").textContent = "Cancelled";
       setWarn(null);
       toast(t.cancelled);
+      pushNotif("NAVBATUZ", t.notifCancelled, "navbatuz-cancel-user");
 
       $("cancelBtn").disabled = false;
       updateSaveBtn();
@@ -1020,9 +1161,7 @@
       rebuildOrgs();
       updateSaveBtn();
 
-      if (ticket && ticket.status === "active") {
-        fetchTicketStatus().catch(()=>{});
-      }
+      if (ticket && ticket.status === "active") fetchTicketStatus().catch(()=>{});
     });
 
     $("regionSel").addEventListener("change", () => {
@@ -1078,7 +1217,6 @@
         $("langSel").value = state.lang;
         applyLang(state.lang);
 
-        // ✅ server online check
         try {
           await apiGet("/api/health");
           setOnlineBadge(true);
@@ -1097,7 +1235,6 @@
         rebuildOrgs();
         if (state.orgId) $("orgSel").value = state.orgId;
 
-        // restore ticket
         loadTicket();
         if (ticket && ticket.status === "active") {
           setTicketUIVisible(true);
@@ -1111,7 +1248,6 @@
           setTicketStateBadge("—");
           updateSaveBtn();
         }
-
       } catch(e){
         console.error(e);
         toast(getT(state.lang).apiFail);
@@ -1121,4 +1257,3 @@
   </script>
 </body>
 </html>
-
