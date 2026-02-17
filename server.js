@@ -83,21 +83,17 @@ app.get("/api/geo", (req, res) => {
 function validateOrgId(geo, orgId) {
   if (!orgId || typeof orgId !== "string") return false;
 
-  // geo.json format: orgsByUnitId { "160": [ {id, name, ...} ] }
-  // orgId ni biz "unitId:orgIndex" yoki "org.id" kabi saqlashimiz mumkin.
-  // Eng ishonchli: geo.json ichidagi org obyektida id bo‘lsa, shuni ishlatamiz.
-  // Bo‘lmasa, fallback: "unitId|name" kabi.
-  const orgsByUnitId = geo.orgsByUnitId || {};
-  for (const unitId of Object.keys(orgsByUnitId)) {
-    const arr = orgsByUnitId[unitId] || [];
+  // NEW: orgsByUnitUzKey ichidan qidiramiz
+  const map = geo.orgsByUnitUzKey || {};
+  for (const key of Object.keys(map)) {
+    const arr = map[key] || [];
     for (const org of arr) {
-      const oid = String(org.id ?? `${unitId}:${org.name}`);
+      const oid = String(org.id);
       if (oid === orgId) return true;
     }
   }
   return false;
 }
-
 // --- API: take ticket (single command for site/app/bot) ---
 // POST /api/take
 // body: { orgId: "....", platform?: "web|bot|app", userId?: "..." }
@@ -255,3 +251,4 @@ initDb()
     console.error("DB init error:", e);
     process.exit(1);
   });
+
