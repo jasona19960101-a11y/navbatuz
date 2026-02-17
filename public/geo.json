@@ -1,25 +1,10 @@
 {
-  "regions": [
-    {
-      "id": "toshkent_vil",
-      "name": {
-        "uz": "Toshkent viloyati",
-        "ru": "Ташкентская область",
-        "en": "Tashkent region"
-      },
-      "units": [
-        {
-          "type": "district",
-          "name": {
-            "uz": "Chinoz tumani",
-            "ru": "Чиназский район",
-            "en": "Chinaz district"
-          }
-        }
-      ]
-    }
-  ],
-  "orgsByUnit": {
+  "sources": {
+    "regions": "https://raw.githubusercontent.com/MIMAXUZ/uzbekistan-regions-data/master/JSON/regions.json",
+    "districts": "https://raw.githubusercontent.com/MIMAXUZ/uzbekistan-regions-data/master/JSON/districts.json",
+    "cities": "https://raw.githubusercontent.com/MIMAXUZ/uzbekistan-regions-data/master/JSON/cities.json"
+  },
+  "orgsByUnitUzKey": {
     "Toshkent viloyati|Chinoz tumani": [
       {
         "id": "yallama_moyka",
@@ -30,14 +15,13 @@
         }
       },
       {
-        "id": "yallama_post",
+        "id": "yallama_border",
         "name": {
           "uz": "Yallama chegara posti",
-          "ru": "Яллама пограничный пост",
+          "ru": "Яллама погранпост",
           "en": "Yallama border post"
         }
       }
     ]
   }
 }
-
