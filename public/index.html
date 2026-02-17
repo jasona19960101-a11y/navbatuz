@@ -892,10 +892,11 @@
 
       try{
         // ✅ backend kutgan format
-        const j = await apiPost("/api/take", {
-          orgId: state.orgId,
-          platform: "web"
-        });
+       const j = await apiPost("/api/take", {
+  orgId: state.orgId,
+  platform: "web",
+  userId: null
+});
 
         if (!j || !j.ok) throw new Error(j?.error || "take failed");
 
@@ -1120,3 +1121,4 @@
   </script>
 </body>
 </html>
+
