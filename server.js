@@ -150,6 +150,25 @@ async function initDb() {
     END $$;
   `);
 
+  // ✅ ✅ ✅ CRITICAL FIX: eski DB'da tickets.name NOT NULL bo'lsa /api/take 500 bo'ladi.
+  // Biz name ustunini nullable qilamiz (yoki bo'lmasa umuman tegmaydi).
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name='tickets' AND column_name='name'
+      ) THEN
+        BEGIN
+          ALTER TABLE tickets ALTER COLUMN name DROP NOT NULL;
+        EXCEPTION WHEN others THEN
+          NULL;
+        END;
+      END IF;
+    END $$;
+  `);
+
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_served_at ON tickets(org_id, served_at);`); } catch {}
@@ -199,9 +218,6 @@ async function ensureOrgState(orgId) {
 }
 
 async function autoUpdateTicketStatusIfNeeded({ ticketId, orgId, number, nowServing }) {
-  // waiting bo'lsa:
-  // - my < nowServing && diff<=5  => missed
-  // - my < nowServing && diff>5   => cancelled
   if (!ticketId || !orgId || !number || !Number.isFinite(nowServing)) return null;
 
   const diff = nowServing - number;
@@ -288,7 +304,6 @@ app.post("/api/take", async (req, res) => {
       const publicBase = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
       const qrData = `${publicBase}/ticket.html?id=${ticket.id}`;
 
-      // QR xato bersa ham endpoint ishlayversin
       let qrPngBase64 = null;
       try {
         qrPngBase64 = await QRCode.toDataURL(qrData);
@@ -370,7 +385,6 @@ app.get("/api/ticket", async (req, res) => {
       if (t.rowCount) {
         const row = t.rows[0];
 
-        // ✅ auto status update
         await autoUpdateTicketStatusIfNeeded({
           ticketId: row.id,
           orgId: row.org_id,
@@ -433,7 +447,6 @@ app.get("/api/ticket/:id", async (req, res) => {
     const lastNumber = Math.max(0, nextNumber - 1);
     const avgServiceSec = await computeAvgServiceSec(ticket.org_id);
 
-    // ✅ auto status update
     await autoUpdateTicketStatusIfNeeded({
       ticketId: ticket.id,
       orgId: ticket.org_id,
