@@ -150,8 +150,8 @@ async function initDb() {
     END $$;
   `);
 
-  // ✅ ✅ ✅ CRITICAL FIX: eski DB'da tickets.name NOT NULL bo'lsa /api/take 500 bo'ladi.
-  // Biz name ustunini nullable qilamiz (yoki bo'lmasa umuman tegmaydi).
+  // ✅ ✅ ✅ CRITICAL FIX #1: eski DB'da tickets.name NOT NULL bo'lsa /api/take 500 bo'ladi.
+  // Biz name ustunini nullable qilamiz (agar ustun bo'lsa).
   await pool.query(`
     DO $$
     BEGIN
@@ -162,6 +162,25 @@ async function initDb() {
       ) THEN
         BEGIN
           ALTER TABLE tickets ALTER COLUMN name DROP NOT NULL;
+        EXCEPTION WHEN others THEN
+          NULL;
+        END;
+      END IF;
+    END $$;
+  `);
+
+  // ✅ ✅ ✅ CRITICAL FIX #2: sizdagi hozirgi xato — tickets.phone NOT NULL
+  // Biz phone ustunini ham nullable qilamiz (agar ustun bo'lsa).
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name='tickets' AND column_name='phone'
+      ) THEN
+        BEGIN
+          ALTER TABLE tickets ALTER COLUMN phone DROP NOT NULL;
         EXCEPTION WHEN others THEN
           NULL;
         END;
