@@ -1,143 +1,281 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<meta charset="UTF-8">
-<title>Ticket</title>
-
-<style>
-body{
-  font-family: Arial;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-  padding:40px;
-}
-
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:12px;
-  display:inline-block;
-}
-
-button{
-  padding:12px 20px;
-  margin:10px;
-  border:none;
-  border-radius:8px;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.served{
-  background:#16a34a;
-  color:white;
-}
-
-.download{
-  background:#2563eb;
-  color:white;
-}
-
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ticket</title>
+  <style>
+    body{ font-family: Arial, sans-serif; background:#0f172a; color:#fff; margin:0; padding:24px; }
+    .wrap{ max-width:720px; margin:0 auto; }
+    .card{ background:#1e293b; border-radius:16px; padding:18px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between; }
+    .btn{ border:0; border-radius:12px; padding:12px 16px; font-size:16px; cursor:pointer; }
+    .btnGreen{ background:#16a34a; color:#fff; }
+    .btnBlue{ background:#2563eb; color:#fff; }
+    .muted{ opacity:.8; font-size:14px; }
+    .err{ background:#7f1d1d; padding:12px; border-radius:12px; }
+    canvas{ background:#fff; border-radius:14px; display:block; width:100%; max-width:520px; margin:16px auto 0; }
+    .title{ font-size:22px; font-weight:700; margin:0 0 6px; }
+    .kv{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
+    .box{ background:#0b1224; border-radius:12px; padding:12px; }
+    .box b{ display:block; font-size:13px; opacity:.85; margin-bottom:6px; }
+    .box span{ font-size:18px; }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="card">
+      <div id="top">
+        <div class="title" id="tTitle">Ticket</div>
+        <div class="muted" id="tSub">—</div>
+      </div>
 
-<div class="card">
+      <div id="errorBox" class="err" style="display:none;"></div>
 
-<h1 id="number">#...</h1>
+      <div class="kv">
+        <div class="box"><b id="lNumber">Raqam</b><span id="vNumber">—</span></div>
+        <div class="box"><b id="lStatus">Holat</b><span id="vStatus">—</span></div>
+        <div class="box"><b id="lNow">Hozir</b><span id="vNow">—</span></div>
+        <div class="box"><b id="lRemain">Oldinda</b><span id="vRemain">—</span></div>
+        <div class="box"><b id="lName">Ism familiya</b><span id="vName">—</span></div>
+        <div class="box"><b id="lETA">ETA</b><span id="vETA">—</span></div>
+      </div>
 
-<p id="org"></p>
+      <canvas id="ticketCanvas" width="700" height="900"></canvas>
 
-<p id="status"></p>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn btnGreen" id="btnServed">✅ Xizmat ko‘rsatildi</button>
+        <button class="btn btnBlue" id="btnJpg">⬇️ JPG yuklab olish</button>
+      </div>
 
-<button class="served" onclick="markServed()">
-Xizmat ko‘rsatildi
-</button>
-
-<button class="download" onclick="downloadJpg()">
-JPG yuklab olish
-</button>
-
-</div>
+      <div class="muted" id="servedNote" style="margin-top:10px;"></div>
+    </div>
+  </div>
 
 <script>
-
-const params = new URLSearchParams(location.search);
-
-const id = params.get("id");
-
-let ticket = null;
-
-async function load(){
-
-  const r = await fetch(`/api/ticket/${id}`);
-
-  const j = await r.json();
-
-  ticket = j.ticket;
-
-  document.getElementById("number").innerText =
-    "#" + ticket.number;
-
-  document.getElementById("org").innerText =
-    ticket.orgId;
-
-  document.getElementById("status").innerText =
-    ticket.status;
-
-}
-
-async function markServed(){
-
-  if(!confirm(
-    "Agar xizmat ko‘rsatildini bossangiz navbatingiz yopiladi"
-  )) return;
-
-  const r = await fetch("/api/ticket/served",{
-    method:"POST",
-    headers:{
-      "Content-Type":"application/json"
+  // ====== i18n ======
+  const lang = (localStorage.getItem("lang") || "uz").toLowerCase();
+  const T = {
+    uz: {
+      ticket: "Ticket",
+      loading: "Yuklanmoqda...",
+      noId: "ID topilmadi. QR link shunday bo‘lishi kerak: ticket.html?id=XXXX",
+      number: "Raqam",
+      status: "Holat",
+      now: "Hozir",
+      remain: "Oldinda",
+      name: "Ism familiya",
+      eta: "ETA",
+      servedBtn: "✅ Xizmat ko‘rsatildi",
+      jpgBtn: "⬇️ JPG yuklab olish",
+      servedWarn: "Diqqat: “Xizmat ko‘rsatildi”ni bossangiz, bu sizga xizmat ko‘rsatilgan deb belgilanadi va navbatingiz o‘tib ketgan hisoblanadi.",
+      confirmServed: "Rostdan ham xizmat ko‘rsatildi deb belgilaysizmi?",
+      statusMap: { waiting:"Waiting", missed:"Missed", cancelled:"Cancelled", served:"Served" },
+      saved: "Yuklab olindi",
+      openMain: "Asosiy sahifa"
     },
-    body:JSON.stringify({
-      ticketId:id
-    })
-  });
+    ru: {
+      ticket: "Талон",
+      loading: "Загрузка...",
+      noId: "ID не найден. QR ссылка должна быть: ticket.html?id=XXXX",
+      number: "Номер",
+      status: "Статус",
+      now: "Сейчас",
+      remain: "Перед вами",
+      name: "Имя Фамилия",
+      eta: "ETA",
+      servedBtn: "✅ Обслужено",
+      jpgBtn: "⬇️ Скачать JPG",
+      servedWarn: "Внимание: если нажмёте “Обслужено”, это будет означать, что вас обслужили и ваша очередь считается пройденной.",
+      confirmServed: "Точно отметить как обслужено?",
+      statusMap: { waiting:"Ожидание", missed:"Пропущен", cancelled:"Отменён", served:"Обслужен" },
+      saved: "Скачано",
+      openMain: "Главная"
+    },
+    en: {
+      ticket: "Ticket",
+      loading: "Loading...",
+      noId: "Missing ID. QR link must be: ticket.html?id=XXXX",
+      number: "Number",
+      status: "Status",
+      now: "Now serving",
+      remain: "Ahead",
+      name: "Full name",
+      eta: "ETA",
+      servedBtn: "✅ Served",
+      jpgBtn: "⬇️ Download JPG",
+      servedWarn: "Warning: pressing “Served” marks your ticket as served and your turn will be considered passed.",
+      confirmServed: "Mark as served?",
+      statusMap: { waiting:"Waiting", missed:"Missed", cancelled:"Cancelled", served:"Served" },
+      saved: "Downloaded",
+      openMain: "Home"
+    }
+  };
+  const tr = T[lang] || T.uz;
 
-  const j = await r.json();
+  // labels
+  document.title = tr.ticket;
+  document.getElementById("tTitle").textContent = tr.ticket;
+  document.getElementById("lNumber").textContent = tr.number;
+  document.getElementById("lStatus").textContent = tr.status;
+  document.getElementById("lNow").textContent = tr.now;
+  document.getElementById("lRemain").textContent = tr.remain;
+  document.getElementById("lName").textContent = tr.name;
+  document.getElementById("lETA").textContent = tr.eta;
+  document.getElementById("btnServed").textContent = tr.servedBtn;
+  document.getElementById("btnJpg").textContent = tr.jpgBtn;
+  document.getElementById("servedNote").textContent = tr.servedWarn;
 
-  if(j.ok){
+  // ====== helpers ======
+  const qs = new URLSearchParams(location.search);
+  const id = qs.get("id");
 
-    alert("Xizmat ko‘rsatildi");
-
-    location.reload();
-
+  const errorBox = document.getElementById("errorBox");
+  function showError(msg){
+    errorBox.style.display = "block";
+    errorBox.textContent = msg;
   }
 
-}
+  function fmtDate(iso){
+    try{
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleString();
+    }catch{ return "—"; }
+  }
 
-function downloadJpg(){
+  // ====== canvas draw ======
+  async function drawTicketCanvas(data){
+    const c = document.getElementById("ticketCanvas");
+    const ctx = c.getContext("2d");
 
-  html2canvas(document.body).then(canvas=>{
+    // white bg
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,c.width,c.height);
 
-    const a=document.createElement("a");
+    // header
+    ctx.fillStyle = "#111827";
+    ctx.font = "bold 48px Arial";
+    ctx.fillText(`#${data.number ?? "-"}`, 40, 90);
 
-    a.href=canvas.toDataURL("image/jpeg");
+    ctx.font = "24px Arial";
+    ctx.fillText(`ORG: ${data.orgId || "-"}`, 40, 140);
 
-    a.download="ticket.jpg";
+    ctx.font = "22px Arial";
+    ctx.fillText(`${tr.status}: ${data.statusText || "-"}`, 40, 185);
 
+    ctx.font = "22px Arial";
+    ctx.fillText(`${tr.now}: ${data.nowServing ?? "-"}`, 40, 225);
+
+    ctx.font = "22px Arial";
+    ctx.fillText(`${tr.remain}: ${data.remaining ?? "-"}`, 40, 265);
+
+    ctx.font = "22px Arial";
+    ctx.fillText(`${tr.name}: ${data.fullName || "-"}`, 40, 305);
+
+    ctx.font = "22px Arial";
+    ctx.fillText(`${tr.eta}: ${data.etaMinutes != null ? (data.etaMinutes + " min") : "-"}`, 40, 345);
+
+    ctx.font = "18px Arial";
+    ctx.fillText(`${fmtDate(data.createdAt)}`, 40, 385);
+
+    // QR
+    if (data.qrPngBase64){
+      const img = new Image();
+      await new Promise((resolve)=>{ img.onload = resolve; img.onerror = resolve; img.src = data.qrPngBase64; });
+      // draw centered
+      const size = 380;
+      const x = Math.round((c.width - size)/2);
+      const y = 430;
+      ctx.drawImage(img, x, y, size, size);
+      ctx.font = "18px Arial";
+      ctx.fillStyle = "#111827";
+      ctx.fillText(data.qrData || "", 40, 845);
+    }
+  }
+
+  function downloadCanvasJpg(){
+    const c = document.getElementById("ticketCanvas");
+    const a = document.createElement("a");
+    a.download = `ticket_${id || "unknown"}.jpg`;
+    a.href = c.toDataURL("image/jpeg", 0.95);
     a.click();
+  }
 
+  // ====== load ticket ======
+  async function load(){
+    if (!id){
+      showError(tr.noId);
+      document.getElementById("tSub").textContent = tr.openMain + ": /";
+      return;
+    }
+
+    document.getElementById("tSub").textContent = tr.loading;
+
+    const r = await fetch(`/api/ticket/${encodeURIComponent(id)}`);
+    const j = await r.json().catch(()=>null);
+
+    if (!r.ok || !j || !j.ok){
+      showError((j && j.error) ? j.error : ("API error: " + r.status));
+      return;
+    }
+
+    // ticket object
+    const t = j.ticket || {};
+    const statusRaw = (t.status || "").toLowerCase();
+    const statusText = (tr.statusMap[statusRaw] || t.status || "-");
+
+    const remaining = Math.max(0, (t.number || 0) - (j.nowServing || 0));
+
+    document.getElementById("tSub").textContent = `ORG: ${t.orgId || t.org_id || "-"} • ${fmtDate(t.createdAt || t.created_at)}`;
+    document.getElementById("vNumber").textContent = t.number ?? "-";
+    document.getElementById("vStatus").textContent = statusText;
+    document.getElementById("vNow").textContent = j.nowServing ?? "-";
+    document.getElementById("vRemain").textContent = remaining;
+
+    // ism familiya (serverdan full_name kelsa yaxshi, bo'lmasa '-' )
+    const fullName = t.fullName || t.full_name || "-";
+    document.getElementById("vName").textContent = fullName;
+
+    const etaMin = (j.avgServiceSec ? Math.round((remaining * j.avgServiceSec)/60) : null);
+    document.getElementById("vETA").textContent = (etaMin != null ? (etaMin + " min") : "—");
+
+    await drawTicketCanvas({
+      number: t.number,
+      orgId: t.orgId || t.org_id,
+      statusText,
+      nowServing: j.nowServing,
+      remaining,
+      fullName: (fullName === "-" ? "" : fullName),
+      etaMinutes: etaMin,
+      createdAt: t.createdAt || t.created_at,
+      qrPngBase64: j.ticket?.qrPngBase64 || j.qrPngBase64 || null,
+      qrData: j.ticket?.qrData || j.qrData || (location.origin + "/ticket.html?id=" + id)
+    });
+  }
+
+  document.getElementById("btnJpg").addEventListener("click", downloadCanvasJpg);
+
+  document.getElementById("btnServed").addEventListener("click", async () => {
+    if (!id) return;
+    if (!confirm(tr.confirmServed)) return;
+
+    const r = await fetch("/api/served", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ ticketId: id })
+    });
+    const j = await r.json().catch(()=>null);
+    if (!r.ok || !j || !j.ok){
+      alert((j && j.error) ? j.error : ("API error: " + r.status));
+      return;
+    }
+    // qayta yuklaymiz
+    await load();
   });
 
-}
-
-load();
-
+  load();
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
-
 </body>
 </html>
