@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Ticket</title>
+
+<style>
+body{
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  padding:40px;
+}
+
+.card{
+  background:#1e293b;
+  padding:20px;
+  border-radius:12px;
+  display:inline-block;
+}
+
+button{
+  padding:12px 20px;
+  margin:10px;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.served{
+  background:#16a34a;
+  color:white;
+}
+
+.download{
+  background:#2563eb;
+  color:white;
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="card">
+
+<h1 id="number">#...</h1>
+
+<p id="org"></p>
+
+<p id="status"></p>
+
+<button class="served" onclick="markServed()">
+Xizmat ko‘rsatildi
+</button>
+
+<button class="download" onclick="downloadJpg()">
+JPG yuklab olish
+</button>
+
+</div>
+
+<script>
+
+const params = new URLSearchParams(location.search);
+
+const id = params.get("id");
+
+let ticket = null;
+
+async function load(){
+
+  const r = await fetch(`/api/ticket/${id}`);
+
+  const j = await r.json();
+
+  ticket = j.ticket;
+
+  document.getElementById("number").innerText =
+    "#" + ticket.number;
+
+  document.getElementById("org").innerText =
+    ticket.orgId;
+
+  document.getElementById("status").innerText =
+    ticket.status;
+
+}
+
+async function markServed(){
+
+  if(!confirm(
+    "Agar xizmat ko‘rsatildini bossangiz navbatingiz yopiladi"
+  )) return;
+
+  const r = await fetch("/api/ticket/served",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+      ticketId:id
+    })
+  });
+
+  const j = await r.json();
+
+  if(j.ok){
+
+    alert("Xizmat ko‘rsatildi");
+
+    location.reload();
+
+  }
+
+}
+
+function downloadJpg(){
+
+  html2canvas(document.body).then(canvas=>{
+
+    const a=document.createElement("a");
+
+    a.href=canvas.toDataURL("image/jpeg");
+
+    a.download="ticket.jpg";
+
+    a.click();
+
+  });
+
+}
+
+load();
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
+
+</body>
+</html>
