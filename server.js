@@ -529,6 +529,129 @@ app.post("/api/cancel", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+// USER: o‘z ticketini served deb belgilaydi
+app.post("/api/ticket/served", async (req, res) => {
+  try {
+    const { ticketId } = req.body || {};
+
+    if (!ticketId) {
+      return res.status(400).json({
+        ok: false,
+        error: "ticketId kerak"
+      });
+    }
+
+    const client = await pool.connect();
+
+    try {
+
+      await client.query("BEGIN");
+
+      const t = await client.query(
+        `SELECT id, org_id, number, status
+         FROM tickets
+         WHERE id=$1
+         FOR UPDATE`,
+        [ticketId]
+      );
+
+      if (!t.rowCount) {
+
+        await client.query("ROLLBACK");
+
+        return res.status(404).json({
+          ok: false,
+          error: "Ticket topilmadi"
+        });
+
+      }
+
+      const ticket = t.rows[0];
+
+      if (ticket.status === "served") {
+
+        await client.query("COMMIT");
+
+        return res.json({
+          ok: true,
+          message: "Already served"
+        });
+
+      }
+
+      await client.query(
+        `UPDATE tickets
+         SET status='served',
+             served_at=now(),
+             updated_at=now()
+         WHERE id=$1`,
+        [ticketId]
+      );
+
+      const st = await client.query(
+        `SELECT current_number, next_number
+         FROM org_state
+         WHERE org_id=$1
+         FOR UPDATE`,
+        [ticket.org_id]
+      );
+
+      let currentNumber = safeInt(st.rows[0]?.current_number, 0);
+
+      const nextNumber = safeInt(st.rows[0]?.next_number, 1);
+
+      const nowServing = currentNumber + 1;
+
+      if (ticket.number === nowServing) {
+
+        await client.query(
+          `UPDATE org_state
+           SET current_number=current_number+1,
+               updated_at=now()
+           WHERE org_id=$1`,
+          [ticket.org_id]
+        );
+
+        currentNumber++;
+
+      }
+
+      await client.query("COMMIT");
+
+      return res.json({
+        ok: true,
+        served: true,
+        currentNumber,
+        nowServing: currentNumber + 1,
+        lastNumber: Math.max(0, nextNumber - 1)
+      });
+
+    }
+    catch (e) {
+
+      await client.query("ROLLBACK");
+
+      throw e;
+
+    }
+    finally {
+
+      client.release();
+
+    }
+
+  }
+  catch (e) {
+
+    console.error("POST /api/ticket/served error:", e);
+
+    res.status(500).json({
+      ok: false,
+      error: e.message
+    });
+
+  }
+});
 
 app.post("/api/admin/next", async (req, res) => {
   try {
@@ -605,3 +728,4 @@ initDb()
     console.error("DB init error:", e);
     process.exit(1);
   });
+
