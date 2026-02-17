@@ -1,1 +1,43 @@
+{
+  "regions": [
+    {
+      "id": "toshkent_vil",
+      "name": {
+        "uz": "Toshkent viloyati",
+        "ru": "Ташкентская область",
+        "en": "Tashkent region"
+      },
+      "units": [
+        {
+          "type": "district",
+          "name": {
+            "uz": "Chinoz tumani",
+            "ru": "Чиназский район",
+            "en": "Chinaz district"
+          }
+        }
+      ]
+    }
+  ],
+  "orgsByUnit": {
+    "Toshkent viloyati|Chinoz tumani": [
+      {
+        "id": "yallama_moyka",
+        "name": {
+          "uz": "Yallama moykasi",
+          "ru": "Яллама мойка",
+          "en": "Yallama car wash"
+        }
+      },
+      {
+        "id": "yallama_post",
+        "name": {
+          "uz": "Yallama chegara posti",
+          "ru": "Яллама пограничный пост",
+          "en": "Yallama border post"
+        }
+      }
+    ]
+  }
+}
 
