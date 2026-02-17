@@ -62,10 +62,10 @@ function validateOrgId(geo, orgId) {
 
 // --- DB init ---
 async function initDb() {
-  // extension
+  // 1) extension
   await pool.query(`CREATE EXTENSION IF NOT EXISTS pgcrypto;`);
 
-  // org_state yaratamiz
+  // 2) org_state (create)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS org_state (
       org_id TEXT PRIMARY KEY,
@@ -75,63 +75,35 @@ async function initDb() {
     );
   `);
 
-  // eski schema bo‘lsa rename qilamiz
+  // 3) org_state migration (orgId -> org_id, add missing cols)
   await pool.query(`
     DO $$
     BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='orgId'
-      ) AND NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='org_id'
-      ) THEN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='orgId')
+         AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='org_id')
+      THEN
         ALTER TABLE org_state RENAME COLUMN "orgId" TO org_id;
       END IF;
-    END $$;
-  `);
 
-  // agar org_id yo‘q bo‘lsa qo‘shamiz
-  await pool.query(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='org_id'
-      ) THEN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='org_id') THEN
         ALTER TABLE org_state ADD COLUMN org_id TEXT;
       END IF;
-    END $$;
-  `);
 
-  // boshqa ustunlar ham yo‘q bo‘lsa qo‘shiladi
-  await pool.query(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='next_number'
-      ) THEN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='next_number') THEN
         ALTER TABLE org_state ADD COLUMN next_number INTEGER NOT NULL DEFAULT 1;
       END IF;
 
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='current_number'
-      ) THEN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='current_number') THEN
         ALTER TABLE org_state ADD COLUMN current_number INTEGER NOT NULL DEFAULT 0;
       END IF;
 
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='org_state' AND column_name='updated_at'
-      ) THEN
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='updated_at') THEN
         ALTER TABLE org_state ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
       END IF;
     END $$;
   `);
 
-  // tickets jadvali
+  // 4) tickets (create)
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tickets (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -146,34 +118,55 @@ async function initDb() {
     );
   `);
 
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org ON tickets(org_id);`);
+  // 5) tickets migration (orgId -> org_id, add missing cols)
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='orgId')
+         AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='org_id')
+      THEN
+        ALTER TABLE tickets RENAME COLUMN "orgId" TO org_id;
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='org_id') THEN
+        ALTER TABLE tickets ADD COLUMN org_id TEXT;
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='number') THEN
+        ALTER TABLE tickets ADD COLUMN number INTEGER;
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='status') THEN
+        ALTER TABLE tickets ADD COLUMN status TEXT NOT NULL DEFAULT 'waiting';
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='platform') THEN
+        ALTER TABLE tickets ADD COLUMN platform TEXT;
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='user_id') THEN
+        ALTER TABLE tickets ADD COLUMN user_id TEXT;
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='created_at') THEN
+        ALTER TABLE tickets ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='updated_at') THEN
+        ALTER TABLE tickets ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
+      END IF;
+
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='served_at') THEN
+        ALTER TABLE tickets ADD COLUMN served_at TIMESTAMPTZ;
+      END IF;
+    END $$;
+  `);
+
+  // 6) Indexlar (xatoga tushsa ham server yiqilmasin)
+  try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`); } catch(e) {}
+  try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`); } catch(e) {}
+  try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_served_at ON tickets(org_id, served_at);`); } catch(e) {}
 }
-
-
-// --- Avg service seconds (last 3-4 served intervals) ---
-async function computeAvgServiceSec(orgId) {
-  // oxirgi 6 ta served_at ni olamiz (diff uchun)
-  const r = await pool.query(
-    `
-    SELECT served_at
-    FROM tickets
-    WHERE org_id=$1 AND status='served' AND served_at IS NOT NULL
-    ORDER BY served_at DESC
-    LIMIT 6
-    `,
-    [orgId]
-  );
-
-  const times = r.rows.map((x) => new Date(x.served_at).getTime()).filter((t) => Number.isFinite(t));
-  if (times.length < 3) return null;
-
-  // consecutive difflar: t0-t1, t1-t2, ...
-  const diffsSec = [];
-  for (let i = 0; i < times.length - 1; i++) {
-    const d = (times[i] - times[i + 1]) / 1000;
-    if (d > 5 && d < 60 * 60 * 6) diffsSec.push(Math.round(d)); // 5s..6h
-    if (diffsSec.length >= 4) break;
-  }
 
   if (diffsSec.length < 3) return null;
 
@@ -534,4 +527,5 @@ initDb()
     console.error("DB init error:", e);
     process.exit(1);
   });
+
 
