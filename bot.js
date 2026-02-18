@@ -4,6 +4,20 @@
 
 import { Telegraf, Markup } from "telegraf";
 
+// Bot instance for server-side notifications
+let __botRef = null;
+
+export async function tgSend(chatId, text, extra = {}) {
+  if (!__botRef) return false;
+  try {
+    await __botRef.telegram.sendMessage(chatId, text, { disable_web_page_preview: true, ...extra });
+    return true;
+  } catch (e) {
+    console.error("tgSend error:", e?.message || e);
+    return false;
+  }
+}
+
 export function startBot({
   port,
   publicUrl,
@@ -19,6 +33,7 @@ export function startBot({
   const PUBLIC_BASE = publicUrl;
 
   const bot = new Telegraf(BOT_TOKEN);
+  __botRef = bot;
 
   // oddiy in-memory session (Render restart bo‘lsa ketadi — bu navbat raqamiga ta’sir qilmaydi)
   const session = new Map();
@@ -287,6 +302,8 @@ export function startBot({
         platform: "bot",
         userId: String(ctx.chat.id),
         fullName,
+        telegramChatId: String(ctx.chat.id),
+        telegramUserId: String(ctx.from?.id || ctx.chat.id),
       }),
     });
     const j = await r.json().catch(() => ({}));
