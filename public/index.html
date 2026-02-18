@@ -826,16 +826,101 @@
   }
 
   function renderTicketStatus(data){
-    const t = getT(state.lang);
+  const t = getT(state.lang);
 
-    if (!ticket || !ticket.number) {
-      setTicketUIVisible(false);
-      setTicketStateBadge("—");
-      $("etaText").textContent = `${t.eta}: —`;
-      $("countdownText").textContent = `${t.countdown}: —`;
-      stopCountdown();
-      return;
+  if (!ticket || !ticket.number) {
+    setTicketUIVisible(false);
+    setTicketStateBadge("—");
+    $("etaText").textContent = `${t.eta}: —`;
+    $("countdownText").textContent = `${t.countdown}: —`;
+    stopCountdown();
+    return;
+  }
+
+  const my = Number(ticket.number);
+  const nowServing = Number.isFinite(data?.nowServing) ? Number(data.nowServing) : null;
+  const lastNumber = Number.isFinite(data?.lastNumber) ? Number(data.lastNumber) : my;
+
+  const avgSec = Number.isFinite(data?.avgServiceSec) && Number(data.avgServiceSec) > 0
+    ? Math.round(Number(data.avgServiceSec))
+    : null;
+
+  const ahead = (Number.isFinite(nowServing) ? Math.max(0, my - nowServing) : null);
+  const behind = (Number.isFinite(nowServing) ? Math.max(0, lastNumber - my) : null);
+
+  const serverStatus = (data?.ticket?.status || "").toLowerCase();
+
+  let uiStatusText = t.statusWaiting;
+  let warn = null;
+  let badge = "WAIT";
+
+  if (serverStatus === "cancelled") {
+    uiStatusText = t.statusCancelled;
+    warn = t.autoCancelled;
+    badge = "CANCELLED";
+  }
+  else if (serverStatus === "served") {
+    uiStatusText = "Xizmat ko‘rsatildi";
+    badge = "SERVED";
+  }
+  else {
+    if (!Number.isFinite(nowServing)) {
+      uiStatusText = t.statusWaiting;
+      badge = "WAIT";
+    } 
+    else if (my === nowServing) {
+      uiStatusText = t.statusNow;
+      warn = t.served;
+      badge = "NOW";
+    } 
+    else if (my > nowServing) {
+      uiStatusText = t.statusWaiting;
+      badge = "WAIT";
+    } 
+    else if (my < nowServing) {
+      const diff = nowServing - my;
+      if (diff <= 5) {
+        uiStatusText = t.statusGrace;
+        warn = t.missed;
+        badge = "GRACE";
+      } else {
+        uiStatusText = t.statusCancelled;
+        warn = t.autoCancelled;
+        badge = "CANCELLED";
+      }
     }
+  }
+
+  $("ticketNo").textContent = "#" + my;
+  $("nowServingBadge").textContent = Number.isFinite(nowServing) ? `${t.now}: ${nowServing}` : `${t.now}: —`;
+
+  $("aheadKpi").textContent = ahead ?? "—";
+  $("behindKpi").textContent = behind ?? "—";
+  $("avgKpi").textContent = avgSec ? `${avgSec}s` : "—";
+  $("statusKpi").textContent = uiStatusText;
+
+  setWarn(warn);
+  setTicketStateBadge(badge);
+  setTicketUIVisible(true);
+
+  let etaMin = null;
+  if (avgSec && Number.isFinite(ahead)) etaMin = (ahead * avgSec) / 60;
+
+  if (avgSec && Number.isFinite(ahead)) {
+    const etaMs = Math.max(0, Math.round(ahead * avgSec * 1000));
+    etaEndTs = Date.now() + etaMs;
+    startCountdown();
+  } else {
+    etaEndTs = null;
+    stopCountdown();
+  }
+
+  $("etaText").textContent = `${t.eta}: ` + (etaMin === null ? "—" : (Math.round(etaMin) + " min"));
+  if (!etaEndTs) $("countdownText").textContent = `${t.countdown}: —`;
+
+  $("takeBtn").disabled = true;
+}
+
 
     const my = Number(ticket.number);
     const nowServing = Number.isFinite(data?.nowServing) ? Number(data.nowServing) : null;
@@ -1166,3 +1251,4 @@
 </script>
 </body>
 </html>
+
