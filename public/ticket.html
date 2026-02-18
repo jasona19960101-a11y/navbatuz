@@ -20,6 +20,8 @@
     .box{ background:#0b1224; border-radius:12px; padding:12px; }
     .box b{ display:block; font-size:13px; opacity:.85; margin-bottom:6px; }
     .box span{ font-size:18px; }
+    .toplink{ color:#93c5fd; text-decoration:none; }
+    .toplink:hover{ text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -28,9 +30,12 @@
       <div id="top">
         <div class="title" id="tTitle">Ticket</div>
         <div class="muted" id="tSub">—</div>
+        <div class="muted" style="margin-top:6px;">
+          <a class="toplink" href="/" id="goHome">Asosiy sahifa</a>
+        </div>
       </div>
 
-      <div id="errorBox" class="err" style="display:none;"></div>
+      <div id="errorBox" class="err" style="display:none; margin-top:12px;"></div>
 
       <div class="kv">
         <div class="box"><b id="lNumber">Raqam</b><span id="vNumber">—</span></div>
@@ -120,6 +125,7 @@
   document.getElementById("btnServed").textContent = tr.servedBtn;
   document.getElementById("btnJpg").textContent = tr.jpgBtn;
   document.getElementById("servedNote").textContent = tr.servedWarn;
+  document.getElementById("goHome").textContent = tr.openMain;
 
   const qs = new URLSearchParams(location.search);
   const id = qs.get("id");
@@ -201,7 +207,7 @@
 
     document.getElementById("tSub").textContent = tr.loading;
 
-    const r = await fetch(`/api/ticket/${encodeURIComponent(id)}`);
+    const r = await fetch(`/api/ticket/${encodeURIComponent(id)}`, { cache:"no-store" });
     const j = await r.json().catch(()=>null);
 
     if (!r.ok || !j || !j.ok){
@@ -248,7 +254,8 @@
     const r = await fetch("/api/ticket/served", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ ticketId: id })
+      body: JSON.stringify({ ticketId: id }),
+      cache:"no-store"
     });
     const j = await r.json().catch(()=>null);
     if (!r.ok || !j || !j.ok){
