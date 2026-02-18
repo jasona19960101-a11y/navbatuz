@@ -1,8 +1,9 @@
-// server.js
+// server.js (Node >=18, ESM)
 import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import cors from "cors";
 import { Pool } from "pg";
 import QRCode from "qrcode";
 
@@ -22,8 +23,33 @@ const pool = new Pool({
 });
 
 const app = express();
+
+// ---- Security-ish headers (depsiz) ----
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
+  next();
+});
+
+// ---- CORS (ixtiyoriy) ----
+// RENDER + WEBAPP bo‘lsa: CORS_ORIGIN="https://yourdomain.com,https://another.com"
+const corsOrigin = (process.env.CORS_ORIGIN || "").trim();
+if (corsOrigin) {
+  const allow = corsOrigin.split(",").map(s => s.trim()).filter(Boolean);
+  app.use(cors({ origin: allow, credentials: true }));
+} else {
+  app.use(cors());
+}
+
 app.use(express.json({ limit: "2mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+
+// Static
+app.use(express.static(path.join(__dirname, "public"), {
+  maxAge: "1h",
+  etag: true,
+}));
 
 const GEO_PATH = path.join(__dirname, "public", "geo.json");
 
@@ -66,33 +92,6 @@ async function initDb() {
   `);
 
   await pool.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='orgId')
-         AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='org_id')
-      THEN
-        ALTER TABLE org_state RENAME COLUMN "orgId" TO org_id;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='org_id') THEN
-        ALTER TABLE org_state ADD COLUMN org_id TEXT;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='next_number') THEN
-        ALTER TABLE org_state ADD COLUMN next_number INTEGER NOT NULL DEFAULT 1;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='current_number') THEN
-        ALTER TABLE org_state ADD COLUMN current_number INTEGER NOT NULL DEFAULT 0;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='org_state' AND column_name='updated_at') THEN
-        ALTER TABLE org_state ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
-      END IF;
-    END $$;
-  `);
-
-  await pool.query(`
     CREATE TABLE IF NOT EXISTS tickets (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       org_id TEXT NOT NULL,
@@ -107,79 +106,14 @@ async function initDb() {
     );
   `);
 
-  await pool.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='orgId')
-         AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='org_id')
-      THEN
-        ALTER TABLE tickets RENAME COLUMN "orgId" TO org_id;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='org_id') THEN
-        ALTER TABLE tickets ADD COLUMN org_id TEXT;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='number') THEN
-        ALTER TABLE tickets ADD COLUMN number INTEGER;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='status') THEN
-        ALTER TABLE tickets ADD COLUMN status TEXT NOT NULL DEFAULT 'waiting';
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='platform') THEN
-        ALTER TABLE tickets ADD COLUMN platform TEXT;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='user_id') THEN
-        ALTER TABLE tickets ADD COLUMN user_id TEXT;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='full_name') THEN
-        ALTER TABLE tickets ADD COLUMN full_name TEXT;
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='created_at') THEN
-        ALTER TABLE tickets ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now();
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='updated_at') THEN
-        ALTER TABLE tickets ADD COLUMN updated_at TIMESTAMPTZ NOT NULL DEFAULT now();
-      END IF;
-
-      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='served_at') THEN
-        ALTER TABLE tickets ADD COLUMN served_at TIMESTAMPTZ;
-      END IF;
-    END $$;
-  `);
-
-  // eski DB bo‘lsa name/phone NOT NULL bo‘lib qolmasin
-  await pool.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='name') THEN
-        BEGIN
-          ALTER TABLE tickets ALTER COLUMN name DROP NOT NULL;
-        EXCEPTION WHEN others THEN NULL;
-        END;
-      END IF;
-
-      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='phone') THEN
-        BEGIN
-          ALTER TABLE tickets ALTER COLUMN phone DROP NOT NULL;
-        EXCEPTION WHEN others THEN NULL;
-        END;
-      END IF;
-    END $$;
-  `);
-
+  // indexes
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_served_at ON tickets(org_id, served_at);`); } catch {}
 }
 
 async function computeAvgServiceSec(orgId) {
+  // last 6 served tickets -> time diffs -> average (need at least 3 diffs)
   try {
     const r = await pool.query(
       `
@@ -196,11 +130,12 @@ async function computeAvgServiceSec(orgId) {
       .map((x) => new Date(x.served_at).getTime())
       .filter((t) => Number.isFinite(t));
 
-    if (times.length < 3) return null;
+    if (times.length < 4) return null;
 
     const diffsSec = [];
     for (let i = 0; i < times.length - 1; i++) {
       const d = Math.round((times[i] - times[i + 1]) / 1000);
+      // ignore too small or too huge gaps
       if (d > 5 && d < 21600) diffsSec.push(d);
       if (diffsSec.length >= 4) break;
     }
@@ -222,8 +157,8 @@ async function ensureOrgState(orgId) {
   );
 }
 
-async function autoUpdateTicketStatusIfNeeded({ ticketId, orgId, number, nowServing }) {
-  if (!ticketId || !orgId || !number || !Number.isFinite(nowServing)) return null;
+async function autoUpdateTicketStatusIfNeeded({ ticketId, number, nowServing }) {
+  if (!ticketId || !number || !Number.isFinite(nowServing)) return null;
 
   const diff = nowServing - number;
   if (diff <= 0) return null;
@@ -246,6 +181,7 @@ async function autoUpdateTicketStatusIfNeeded({ ticketId, orgId, number, nowServ
 }
 
 function publicBaseUrl() {
+  // Render’da PUBLIC_URL qo‘ying: https://navbatuz.onrender.com
   return process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 }
 
@@ -258,8 +194,14 @@ async function makeQr(ticketId) {
 
 // ===== ROUTES =====
 
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, service: "navbatuz", time: new Date().toISOString() });
+app.get("/api/health", async (req, res) => {
+  // DB ping ham qilamiz
+  try {
+    await pool.query("SELECT 1");
+    res.json({ ok: true, service: "navbatuz", time: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: "DB error", detail: e.message });
+  }
 });
 
 app.get("/api/geo", (req, res) => {
@@ -342,7 +284,9 @@ app.post("/api/take", async (req, res) => {
           createdAt: ticket.created_at,
           currentNumber,
           remaining: Math.max(0, ticket.number - nowServing),
-          etaMinutes: avgServiceSec ? Math.round((Math.max(0, ticket.number - nowServing) * avgServiceSec) / 60) : null,
+          etaMinutes: avgServiceSec
+            ? Math.round((Math.max(0, ticket.number - nowServing) * avgServiceSec) / 60)
+            : null,
           fullName: ticket.full_name,
           qrData,
           qrPngBase64,
@@ -366,7 +310,7 @@ app.post("/api/take", async (req, res) => {
   }
 });
 
-// Status (orgId + number) — fallback
+// Status (orgId + number) — web polling ishlatadi
 app.get("/api/ticket", async (req, res) => {
   try {
     const orgId = safeStr(req.query.orgId, "").trim();
@@ -404,7 +348,6 @@ app.get("/api/ticket", async (req, res) => {
 
         await autoUpdateTicketStatusIfNeeded({
           ticketId: row.id,
-          orgId: row.org_id,
           number: safeInt(row.number, 0),
           nowServing,
         });
@@ -425,7 +368,9 @@ app.get("/api/ticket", async (req, res) => {
           updatedAt: row2.updated_at,
           currentNumber,
           remaining: Math.max(0, number - nowServing),
-          etaMinutes: avgServiceSec ? Math.round((Math.max(0, number - nowServing) * avgServiceSec) / 60) : null,
+          etaMinutes: avgServiceSec
+            ? Math.round((Math.max(0, number - nowServing) * avgServiceSec) / 60)
+            : null,
           fullName: row2.full_name,
         };
       }
@@ -438,7 +383,7 @@ app.get("/api/ticket", async (req, res) => {
   }
 });
 
-// Ticket by ID + QR qaytaradi
+// Ticket by ID + QR qaytaradi (ticket.html ishlatadi)
 app.get("/api/ticket/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -468,7 +413,6 @@ app.get("/api/ticket/:id", async (req, res) => {
 
     await autoUpdateTicketStatusIfNeeded({
       ticketId: ticket.id,
-      orgId: ticket.org_id,
       number: safeInt(ticket.number, 0),
       nowServing,
     });
@@ -620,7 +564,8 @@ app.post("/api/ticket/served", async (req, res) => {
   }
 });
 
-// admin next
+// ADMIN: next (org_state current_number++)
+// (admin panelingiz bo‘lsa ishlatasiz)
 app.post("/api/admin/next", async (req, res) => {
   try {
     const { orgId } = req.body || {};
@@ -631,50 +576,36 @@ app.post("/api/admin/next", async (req, res) => {
     try {
       await client.query("BEGIN");
 
+      await client.query(
+        `INSERT INTO org_state (org_id) VALUES ($1)
+         ON CONFLICT (org_id) DO NOTHING`,
+        [org]
+      );
+
       const st = await client.query(
         `SELECT current_number, next_number FROM org_state WHERE org_id=$1 FOR UPDATE`,
         [org]
       );
-      if (!st.rowCount) {
-        await client.query("ROLLBACK");
-        return res.status(404).json({ ok: false, error: "org_state topilmadi" });
-      }
 
       const currentNumber = safeInt(st.rows[0]?.current_number, 0);
       const nextNumber = safeInt(st.rows[0]?.next_number, 1);
-      const servingNow = currentNumber + 1;
 
-      if (servingNow < nextNumber) {
-        await client.query(
-          `UPDATE tickets
-           SET status='served', served_at=now(), updated_at=now()
-           WHERE org_id=$1 AND number=$2 AND status IN ('waiting','missed')`,
-          [org, servingNow]
-        );
+      await client.query(
+        `UPDATE org_state SET current_number=current_number+1, updated_at=now() WHERE org_id=$1`,
+        [org]
+      );
 
-        const r = await client.query(
-          `UPDATE org_state
-           SET current_number = current_number + 1, updated_at=now()
-           WHERE org_id=$1
-           RETURNING current_number`,
-          [org]
-        );
+      await client.query("COMMIT");
 
-        await client.query("COMMIT");
-
-        const newCurrent = safeInt(r.rows[0]?.current_number, 0);
-        const nowServing = newCurrent + 1;
-        const lastNumber = Math.max(0, nextNumber - 1);
-        const avgServiceSec = await computeAvgServiceSec(org);
-
-        return res.json({ ok: true, currentNumber: newCurrent, nowServing, lastNumber, avgServiceSec: avgServiceSec ?? null });
-      } else {
-        await client.query("COMMIT");
-        return res.json({ ok: true, message: "Navbat bo‘sh", currentNumber, nowServing: currentNumber + 1, lastNumber: Math.max(0, nextNumber - 1) });
-      }
-    } catch (err) {
+      return res.json({
+        ok: true,
+        currentNumber: currentNumber + 1,
+        nowServing: currentNumber + 2,
+        lastNumber: Math.max(0, nextNumber - 1),
+      });
+    } catch (e) {
       await client.query("ROLLBACK");
-      throw err;
+      throw e;
     } finally {
       client.release();
     }
@@ -684,15 +615,41 @@ app.post("/api/admin/next", async (req, res) => {
   }
 });
 
+// ADMIN: reset org (danger)
+app.post("/api/admin/reset", async (req, res) => {
+  try {
+    const { orgId } = req.body || {};
+    const org = safeStr(orgId, "").trim();
+    if (!org) return res.status(400).json({ ok: false, error: "orgId kerak" });
+
+    await pool.query(
+      `UPDATE org_state SET current_number=0, next_number=1, updated_at=now() WHERE org_id=$1`,
+      [org]
+    );
+    await pool.query(
+      `UPDATE tickets SET status='cancelled', updated_at=now() WHERE org_id=$1 AND status IN ('waiting','missed')`,
+      [org]
+    );
+
+    res.json({ ok: true, reset: true });
+  } catch (e) {
+    console.error("POST /api/admin/reset error:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Fallback: SPA not needed; index.html already in public
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-initDb()
-  .then(() => {
-    app.listen(PORT, () => console.log(`NAVBATUZ server running on ${PORT}`));
-  })
-  .catch((e) => {
-    console.error("DB init error:", e);
+// Boot
+(async function start() {
+  try {
+    await initDb();
+    app.listen(PORT, () => console.log(`✅ NAVBATUZ running on :${PORT}`));
+  } catch (e) {
+    console.error("❌ Failed to start:", e);
     process.exit(1);
-  });
+  }
+})();
