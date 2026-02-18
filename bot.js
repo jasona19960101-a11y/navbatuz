@@ -388,9 +388,18 @@ export function startBot({ app, port, publicUrl }) {
     await bot.launch();
     console.log("✅ Bot polling mode. PUBLIC:", PUBLIC_BASE);
   })();
+  process.once("SIGINT", () => {
+  try {
+    bot.stop("SIGINT");
+  } catch (e) {
+    console.log("Bot already stopped (SIGINT)");
+  }
+});
 
-  process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
-  return bot;
-}
+process.once("SIGTERM", () => {
+  try {
+    bot.stop("SIGTERM");
+  } catch (e) {
+    console.log("Bot already stopped (SIGTERM)");
+  }
+});
