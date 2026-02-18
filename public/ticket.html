@@ -261,7 +261,7 @@
     if (!id) return;
     if (!confirm(tr.confirmServed)) return;
 
-    const r = await fetch("/api/served", {
+    const r = await fetch("/api/ticket/served", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ ticketId: id })
