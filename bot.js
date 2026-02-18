@@ -1,16 +1,11 @@
 // bot.js (Node >=18, ESM)
 // NAVBATUZ Telegram bot: web + admin panel bilan 100% bitta navbat (bitta DB)
 // Muhim: bot ham /api/take endpointidan foydalanadi, shu sabab navbat tartibi buzilmaydi.
-//
-// IMPORTANT (Render): polling (getUpdates) deploy vaqtida 409 conflict berishi mumkin.
-// Shuning uchun agar WEBHOOK_URL env berilgan bo'lsa, bot webhook rejimida ishlaydi (tavsiya).
-// WEBHOOK_URL misol: https://navbatuz.onrender.com  (oxirida / bo'lmasin)
 
 import { Telegraf, Markup } from "telegraf";
 
 // Bot instance for server-side notifications
 let __botRef = null;
-let __launched = false;
 
 export async function tgSend(chatId, text, extra = {}) {
   if (!__botRef) return false;
@@ -23,33 +18,24 @@ export async function tgSend(chatId, text, extra = {}) {
   }
 }
 
-/**
- * Start telegram bot.
- * @param {object} opts
- * @param {import('express').Express} [opts.app] - express app (webhook mode uchun kerak)
- * @param {number|string} opts.port - server port (internal API uchun)
- * @param {string} opts.publicUrl - public base url (ticket linklar uchun)
- */
-export function startBot({ app, port, publicUrl }) {
-  if (__launched) {
-    console.log("ℹ️ Bot already launched, skipping duplicate start.");
-    return __botRef;
-  }
-  __launched = true;
-
+export function startBot({
+  port,
+  publicUrl,
+}) {
   const BOT_TOKEN = process.env.BOT_TOKEN;
   if (!BOT_TOKEN) {
     console.log("ℹ️ BOT_TOKEN yo‘q — bot ishga tushirilmaydi");
     return null;
   }
 
+  // Bot server bilan bitta konteynerda ishlaydi: API chaqiriqlarni lokal qiladi
   const API_BASE_INTERNAL = `http://127.0.0.1:${port}`;
-  const PUBLIC_BASE = (publicUrl || "").replace(/\/$/, "");
+  const PUBLIC_BASE = publicUrl;
 
   const bot = new Telegraf(BOT_TOKEN);
   __botRef = bot;
 
-  // ---- tiny in-memory session ----
+  // oddiy in-memory session (Render restart bo‘lsa ketadi — bu navbat raqamiga ta’sir qilmaydi)
   const session = new Map();
   const keyOf = (chatId) => String(chatId);
   const setSess = (chatId, data) => {
@@ -57,8 +43,8 @@ export function startBot({ app, port, publicUrl }) {
   };
   const getSess = (chatId) => session.get(keyOf(chatId)) || {};
 
-  async function getJson(url, opts = {}) {
-    const r = await fetch(url, { cache: "no-store", ...opts });
+  async function getJson(url) {
+    const r = await fetch(url, { cache: "no-store" });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j?.error || `Fetch failed ${r.status}: ${url}`);
     return j;
@@ -121,298 +107,321 @@ export function startBot({ app, port, publicUrl }) {
   }
   function tr(ctx, key) {
     const lang = getLang(ctx);
-    return (T[key] && T[key][lang]) || "";
+    const item = T[key];
+    if (!item) return "";
+    return item[lang] ?? item.uz ?? "";
   }
-
-  function mainMenu(ctx) {
+  function langKeyboard() {
     return Markup.inlineKeyboard([
-      [Markup.button.callback(tr(ctx, "menuNavbat"), "menu:navbat")],
-      [Markup.button.callback(tr(ctx, "menuHolat"), "menu:holat")],
-      [Markup.button.callback(tr(ctx, "menuTil"), "menu:til")],
+      [Markup.button.callback("🇺🇿 O‘zbekcha", "LANG:uz"), Markup.button.callback("🇷🇺 Русский", "LANG:ru")],
     ]);
   }
 
-  async function ensureGeo(ctx) {
+  async function sendMenu(ctx) {
+    const lang = getLang(ctx);
+    const kb = Markup.keyboard([
+      [T.menuNavbat[lang], T.menuHolat[lang]],
+      [T.menuTil[lang]],
+    ])
+      .resize()
+      .persistent();
+
+    await ctx.reply(T.menuTitle[lang], kb);
+    await ctx.reply(T.helpText[lang]);
+  }
+
+  // ====== geo.json -> bot format ======
+  async function buildGeoForBot() {
+    const cfg = await getJson(`${API_BASE_INTERNAL}/geo.json`);
+    const regionsRaw = await getJson(cfg.sources.regions);
+    const districtsRaw = await getJson(cfg.sources.districts);
+
+    let citiesRaw = [];
+    try {
+      citiesRaw = await getJson(cfg.sources.cities);
+    } catch {
+      citiesRaw = [];
+    }
+
+    const regions = regionsRaw.map((r) => ({
+      id: String(r.id ?? r.soato_id ?? r.code),
+      nameUz: String(r.name_uz ?? r.nameUz ?? r.name ?? ""),
+      nameRu: String(r.name_ru ?? r.nameRu ?? ""),
+    }));
+
+    const toUnit = (u, kind) => ({
+      id: String(u.id ?? u.soato_id ?? u.code ?? (u.name_uz || u.name_ru || "")),
+      regionId: String(u.region_id ?? u.regionId ?? u.parent_id ?? u.parentId ?? ""),
+      kind,
+      nameUz: String(u.name_uz ?? u.nameUz ?? u.name ?? ""),
+      nameRu: String(u.name_ru ?? u.nameRu ?? ""),
+    });
+
+    const units = [
+      ...(Array.isArray(districtsRaw) ? districtsRaw : []).map((x) => toUnit(x, "district")),
+      ...(Array.isArray(citiesRaw) ? citiesRaw : []).map((x) => toUnit(x, "city")),
+    ].filter((u) => u.regionId);
+
+    const orgsByUnitUzKey = cfg.orgsByUnitUzKey || {};
+    return { regions, units, orgsByUnitUzKey };
+  }
+
+  function chunk(arr, size) {
+    const out = [];
+    for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+    return out;
+  }
+
+  function normalizeFullName(text) {
+    const t = String(text || "").trim().replace(/\s+/g, " ");
+    if (t.length < 3) return "";
+    return t.slice(0, 80);
+  }
+
+  function defaultFullNameFromTelegram(ctx) {
+    const first = (ctx.from?.first_name || "").trim();
+    const last = (ctx.from?.last_name || "").trim();
+    return normalizeFullName(`${first} ${last}`.trim());
+  }
+
+  async function ensureName(ctx) {
     const s = getSess(ctx.chat.id);
-    if (s.geo) return s.geo;
-    const geo = await getJson(`${API_BASE_INTERNAL}/api/geo`);
-    setSess(ctx.chat.id, { geo });
-    return geo;
+    if (s.fullName && s.fullName.length >= 3) return s.fullName;
+    const d = defaultFullNameFromTelegram(ctx);
+    if (d && d.length >= 3) {
+      setSess(ctx.chat.id, { fullName: d });
+      return d;
+    }
+    return "";
   }
 
-  function regionsFromGeo(geo) {
-    // geo.regions: [{id,name}] yoki unitlar ichida
-    const regions = geo?.regions || geo?.data?.regions || [];
-    return Array.isArray(regions) ? regions : [];
-  }
+  // ====== COMMANDS ======
+  bot.start(async (ctx) => {
+    await ctx.reply(tr(ctx, "chooseLang"), langKeyboard());
+  });
 
-  // In your project geo.json: regions.json + districts.json used, and orgsByUnitId mapping
-  function unitsFromGeo(geo, regionId) {
-    const units = geo?.units || geo?.data?.units || geo?.districts || [];
-    const arr = Array.isArray(units) ? units : [];
-    if (!regionId) return arr;
-    return arr.filter((u) => String(u.region_id ?? u.regionId ?? u.region ?? "") === String(regionId));
-  }
+  bot.command("til", async (ctx) => {
+    await ctx.reply(tr(ctx, "chooseLang"), langKeyboard());
+  });
 
-  function orgsForUnit(geo, unitId) {
-    const map = geo?.orgsByUnitId || geo?.orgsByUnitUzKey || {};
-    const key = String(unitId);
-    const orgs = map[key] || [];
-    return Array.isArray(orgs) ? orgs : [];
-  }
+  bot.hears(["📲 Navbat olish", "📲 Получить очередь"], async (ctx) => {
+    // /navbat ni trigger qilamiz
+    return bot.handleUpdate({
+      ...ctx.update,
+      message: { ...ctx.update.message, text: "/navbat" },
+    });
+  });
 
-  // --- flows ---
-  async function showLang(ctx) {
-    await ctx.reply(tr(ctx, "chooseLang"), Markup.inlineKeyboard([
-      [Markup.button.callback("🇺🇿 O‘zbek", "lang:uz"), Markup.button.callback("🇷🇺 Русский", "lang:ru")],
-    ]));
-  }
+  bot.hears(["🧾 Holatim", "🧾 Мой статус"], async (ctx) => {
+    const lang = getLang(ctx);
+    await ctx.reply(T.holatUsage[lang]);
+  });
 
-  async function showRegions(ctx) {
-    const geo = await ensureGeo(ctx);
-    const regions = regionsFromGeo(geo);
-    if (!regions.length) {
-      await ctx.reply(tr(ctx, "errPrefix") + "geo regions topilmadi");
+  bot.hears(["🌐 Tilni o‘zgartirish", "🌐 Сменить язык"], async (ctx) => {
+    await ctx.reply(tr(ctx, "chooseLang"), langKeyboard());
+  });
+
+  bot.command("navbat", async (ctx) => {
+    try {
+      const geo = await buildGeoForBot();
+      setSess(ctx.chat.id, { geo, step: "region", regionId: null, unitId: null, orgId: null });
+
+      const lang = getLang(ctx);
+      const buttons = geo.regions
+        .slice(0, 40)
+        .map((r) =>
+          Markup.button.callback(
+            (lang === "ru" ? (r.nameRu || r.nameUz) : (r.nameUz || r.nameRu)) || r.id,
+            `REGION:${r.id}`
+          )
+        );
+
+      await ctx.reply(tr(ctx, "pickRegion"), Markup.inlineKeyboard(chunk(buttons, 2)));
+    } catch (e) {
+      await ctx.reply(tr(ctx, "errPrefix") + e.message);
+    }
+  });
+
+  bot.command("holat", async (ctx) => {
+    try {
+      const parts = (ctx.message.text || "").split(" ").filter(Boolean);
+      const id = parts[1];
+      if (!id) return ctx.reply(tr(ctx, "holatUsage"));
+
+      const j = await getJson(`${API_BASE_INTERNAL}/api/ticket/${id}`);
+      if (!j.ok) throw new Error(j.error || tr(ctx, "ticketNotFound"));
+
+      const lang = getLang(ctx);
+      const t = j.ticket;
+      await ctx.reply(
+        `Ticket: ${t.id}\nOrg: ${t.orgId}\n${T.number[lang]}: ${t.number}\nHozirgi: ${t.currentNumber}\n${T.remaining[lang]}: ${t.remaining}\n${T.eta[lang]}: ~${t.etaMinutes ?? "-"} ${T.minutes[lang]}\nStatus: ${t.status}`
+      );
+    } catch (e) {
+      await ctx.reply(tr(ctx, "errPrefix") + e.message);
+    }
+  });
+
+  // Name input step
+  bot.on("text", async (ctx, next) => {
+    const s = getSess(ctx.chat.id);
+    if (s.step !== "name") return next();
+
+    const name = normalizeFullName(ctx.message.text);
+    if (!name) {
+      await ctx.reply(tr(ctx, "askName"), { parse_mode: "HTML" });
       return;
     }
-    const buttons = regions.slice(0, 60).map(r => [Markup.button.callback(String(r.name || r.title || r.label), `reg:${r.id}`)]);
-    await ctx.reply(tr(ctx, "pickRegion"), Markup.inlineKeyboard(buttons));
-  }
 
-  async function showUnits(ctx, regionId) {
-    const geo = await ensureGeo(ctx);
-    const units = unitsFromGeo(geo, regionId);
-    if (!units.length) {
-      await ctx.reply(tr(ctx, "errPrefix") + "unit topilmadi");
-      return;
-    }
-    setSess(ctx.chat.id, { regionId });
-    const buttons = units.slice(0, 60).map(u => [Markup.button.callback(String(u.name || u.title || u.label), `unit:${u.id}`)]);
-    await ctx.reply(tr(ctx, "pickUnit"), Markup.inlineKeyboard(buttons));
-  }
+    setSess(ctx.chat.id, { fullName: name, step: "org_take" });
+    await ctx.reply(tr(ctx, "nameSaved"));
 
-  async function showOrgs(ctx, unitId) {
-    const geo = await ensureGeo(ctx);
-    const orgs = orgsForUnit(geo, unitId);
-    if (!orgs.length) {
-      await ctx.reply(tr(ctx, "noOrgs"));
-      return;
-    }
-    setSess(ctx.chat.id, { unitId });
-    const buttons = orgs.slice(0, 60).map(o => [Markup.button.callback(String(o.name || o.title || o.label), `org:${o.id}`)]);
-    await ctx.reply(tr(ctx, "pickOrg"), Markup.inlineKeyboard(buttons));
-  }
-
-  async function askName(ctx) {
-    setSess(ctx.chat.id, { step: "ask_name" });
-    await ctx.reply(tr(ctx, "askName"), { parse_mode: "HTML" });
-  }
-
-  function bestName(ctx) {
-    const fn = ctx.from?.first_name || "";
-    const ln = ctx.from?.last_name || "";
-    const full = `${fn} ${ln}`.trim();
-    return full || ctx.from?.username || "User";
-  }
+    // endi navbat olishni davom ettiramiz
+    await takeTicket(ctx);
+  });
 
   async function takeTicket(ctx) {
     const s = getSess(ctx.chat.id);
     const orgId = s.orgId;
     if (!orgId) {
-      await showRegions(ctx);
+      await ctx.reply(tr(ctx, "errPrefix") + "orgId topilmadi");
       return;
     }
 
-    // name
-    const fullName = (s.fullName || "").trim() || bestName(ctx);
-    // include chat/user to enable notifications
-    const body = {
-      orgId,
-      fullName,
-      platform: "telegram",
-      telegramChatId: ctx.chat.id,
-      telegramUserId: ctx.from?.id,
-    };
+    const fullName = (await ensureName(ctx)) || s.fullName || "";
+    if (!fullName) {
+      setSess(ctx.chat.id, { step: "name" });
+      await ctx.reply(tr(ctx, "askName"), { parse_mode: "HTML" });
+      return;
+    }
 
-    const j = await getJson(`${API_BASE_INTERNAL}/api/take`, {
+    const r = await fetch(`${API_BASE_INTERNAL}/api/take`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        orgId,
+        platform: "bot",
+        userId: String(ctx.chat.id),
+        fullName,
+        telegramChatId: String(ctx.chat.id),
+        telegramUserId: String(ctx.from?.id || ctx.chat.id),
+      }),
     });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) throw new Error(j?.error || "Ticket olinmadi");
 
-    const ticket = j?.ticket || j;
-    const ticketUrl = `${PUBLIC_BASE}/ticket.html?id=${ticket.id}`;
-
-    const msg =
-      `${tr(ctx, "ticketTaken")}\n` +
-      `${tr(ctx, "number")}: <b>${ticket.number}</b>\n` +
-      `${tr(ctx, "ticketId")}: <code>${ticket.id}</code>\n` +
-      `${tr(ctx, "link")}: ${ticketUrl}`;
-
-    await ctx.reply(msg, { parse_mode: "HTML", disable_web_page_preview: true });
-  }
-
-  async function holat(ctx, ticketId) {
-    if (!ticketId) {
-      await ctx.reply(tr(ctx, "holatUsage"));
-      return;
-    }
-    const j = await getJson(`${API_BASE_INTERNAL}/api/ticket?id=${encodeURIComponent(ticketId)}`);
-    if (!j?.ticket) {
-      await ctx.reply(tr(ctx, "ticketNotFound"));
-      return;
-    }
+    const lang = getLang(ctx);
     const t = j.ticket;
-    const msg =
-      `${tr(ctx, "number")}: <b>${t.number}</b>\n` +
-      `Status: <b>${t.status}</b>\n` +
-      `${tr(ctx, "remaining")}: <b>${t.remaining ?? "-"}</b>\n` +
-      `${tr(ctx, "eta")}: <b>${t.etaMin ?? "-"}</b> ${tr(ctx, "minutes")}`;
-    await ctx.reply(msg, { parse_mode: "HTML" });
+    const webLink = `${PUBLIC_BASE}/ticket.html?id=${t.id}`;
+
+    await ctx.reply(
+      `${T.ticketTaken[lang]}\n\n` +
+        `${T.number[lang]}: ${t.number}\n` +
+        `${T.remaining[lang]}: ${t.remaining}\n` +
+        `${T.eta[lang]}: ~${t.etaMinutes ?? "-"} ${T.minutes[lang]}\n\n` +
+        `${T.ticketId[lang]}: ${t.id}\n` +
+        `${T.link[lang]}: ${webLink}`
+    );
+
+    setSess(ctx.chat.id, { step: null });
   }
 
-  // --- commands ---
-  bot.start(async (ctx) => {
-    await showLang(ctx);
-    await ctx.reply(tr(ctx, "menuTitle"), mainMenu(ctx));
-  });
-
-  bot.command("til", async (ctx) => showLang(ctx));
-  bot.command("help", async (ctx) => ctx.reply(T.helpText[getLang(ctx)]));
-  bot.command("navbat", async (ctx) => showRegions(ctx));
-  bot.command("holat", async (ctx) => {
-    const parts = (ctx.message?.text || "").trim().split(/\s+/);
-    const ticketId = parts[1];
-    await holat(ctx, ticketId);
-  });
-
-  bot.on("text", async (ctx) => {
-    const s = getSess(ctx.chat.id);
-    if (s.step === "ask_name") {
-      setSess(ctx.chat.id, { fullName: String(ctx.message.text || "").trim(), step: null });
-      await ctx.reply(tr(ctx, "nameSaved"));
-      await takeTicket(ctx);
-    }
-  });
-
-  // --- callback handlers ---
   bot.on("callback_query", async (ctx) => {
     try {
-      const data = String(ctx.callbackQuery?.data || "");
-      if (data === "menu:til") {
-        await ctx.answerCbQuery();
-        await showLang(ctx);
-        return;
-      }
-      if (data === "menu:navbat") {
-        await ctx.answerCbQuery();
-        await showRegions(ctx);
-        return;
-      }
-      if (data === "menu:holat") {
-        await ctx.answerCbQuery();
-        await ctx.reply(tr(ctx, "holatUsage"));
+      const data = ctx.callbackQuery.data || "";
+      const chatId = ctx.chat.id;
+
+      // LANGUAGE
+      if (data.startsWith("LANG:")) {
+        const lang = data.split(":")[1] === "ru" ? "ru" : "uz";
+        setSess(chatId, { lang });
+
+        if (lang === "uz") await ctx.answerCbQuery(T.langSetUz.uz);
+        else await ctx.answerCbQuery(T.langSetRu.ru);
+
+        await ctx.editMessageText(T.chooseLang[lang]);
+        await sendMenu(ctx);
         return;
       }
 
-      if (data.startsWith("lang:")) {
-        const lang = data.split(":")[1];
-        setSess(ctx.chat.id, { lang });
-        await ctx.answerCbQuery(lang === "ru" ? tr(ctx, "langSetRu") : tr(ctx, "langSetUz"));
-        await ctx.reply(tr(ctx, "menuTitle"), mainMenu(ctx));
-        return;
-      }
+      const s = getSess(chatId);
+      const geo = s.geo || (await buildGeoForBot());
+      const lang = getLang(ctx);
 
-      if (data.startsWith("reg:")) {
-        await ctx.answerCbQuery();
+      // REGION
+      if (data.startsWith("REGION:")) {
         const regionId = data.split(":")[1];
-        await showUnits(ctx, regionId);
+        setSess(chatId, { regionId, step: "unit", geo });
+
+        const units = geo.units.filter((u) => String(u.regionId) === String(regionId));
+        const buttons = units.slice(0, 60).map((u) => {
+          const prefix = u.kind === "city" ? T.cityPrefix[lang] : T.districtPrefix[lang];
+          const name = lang === "ru" ? (u.nameRu || u.nameUz) : (u.nameUz || u.nameRu);
+          return Markup.button.callback(prefix + (name || u.id), `UNIT:${u.id}`);
+        });
+
+        await ctx.editMessageText(tr(ctx, "pickUnit"), Markup.inlineKeyboard(chunk(buttons, 2)));
         return;
       }
 
-      if (data.startsWith("unit:")) {
-        await ctx.answerCbQuery();
+      // UNIT
+      if (data.startsWith("UNIT:")) {
         const unitId = data.split(":")[1];
-        await showOrgs(ctx, unitId);
-        return;
-      }
+        setSess(chatId, { unitId, step: "org", geo });
 
-      if (data.startsWith("org:")) {
-        await ctx.answerCbQuery();
-        const orgId = data.split(":")[1];
-        setSess(ctx.chat.id, { orgId });
-        const s = getSess(ctx.chat.id);
-        if (!s.fullName) {
-          await askName(ctx);
+        const region = geo.regions.find((r) => String(r.id) === String(s.regionId));
+        const unit = geo.units.find((u) => String(u.id) === String(unitId));
+        if (!region || !unit) {
+          await ctx.answerCbQuery(tr(ctx, "notFoundChoice"));
           return;
         }
+
+        const uzKey = `${(region.nameUz || "").trim()}|${(unit.nameUz || "").trim()}`;
+        const orgs = geo.orgsByUnitUzKey[uzKey] || [];
+        if (!orgs.length) {
+          await ctx.editMessageText(tr(ctx, "noOrgs"));
+          return;
+        }
+
+        const buttons = orgs.slice(0, 50).map((o) => {
+          const label =
+            lang === "ru" ? (o.name?.ru || o.name?.uz || o.id) : (o.name?.uz || o.name?.ru || o.id);
+          return Markup.button.callback(label, `ORG:${encodeURIComponent(o.id)}`);
+        });
+
+        await ctx.editMessageText(tr(ctx, "pickOrg"), Markup.inlineKeyboard(chunk(buttons, 1)));
+        return;
+      }
+
+      // ORG
+      if (data.startsWith("ORG:")) {
+        const orgId = decodeURIComponent(data.split(":")[1] || "");
+        setSess(chatId, { orgId, step: "org_take" });
+
+        // Telegraf callback'ni tez yopib qo'yamiz
+        try { await ctx.answerCbQuery("OK"); } catch {}
+
         await takeTicket(ctx);
         return;
       }
 
       await ctx.answerCbQuery(tr(ctx, "unknownAction"));
     } catch (e) {
-      try { await ctx.answerCbQuery(); } catch {}
-      await ctx.reply(tr(ctx, "errPrefix") + (e?.message || String(e)));
+      await ctx.reply(tr(ctx, "errPrefix") + e.message);
     }
   });
-
-  // ---- Start: webhook preferred, polling fallback ----
-  // Telegraf.stop() throws "Bot is not running!" if we never called bot.launch().
-  // In webhook mode (webhookCallback + setWebhook), we DON'T call bot.launch().
-  // So we track whether launch() was used.
-  let startedByLaunch = false;
 
   (async () => {
+    // agar webhook qolib ketgan bo'lsa, polling ishlamay qoladi
     try {
-      // Har ehtimolga qarshi eski webhookni tozalab qo'yamiz (pollingda muammo bermasin)
-      await bot.telegram.deleteWebhook({ drop_pending_updates: true }).catch(() => {});
+      await bot.telegram.deleteWebhook({ drop_pending_updates: true });
     } catch {}
 
-    const webhookBase = (process.env.WEBHOOK_URL || "").trim().replace(/\/$/, "");
-    const webhookPath = "/tg";
-
-    if (webhookBase) {
-      if (!app) {
-        console.log("⚠️ WEBHOOK_URL berilgan, lekin express app uzatilmagan. Pollingga o'tyapman.");
-      } else {
-        const fullWebhook = `${webhookBase}${webhookPath}`;
-        try {
-          // Express route
-          app.use(webhookPath, bot.webhookCallback(webhookPath));
-          await bot.telegram.setWebhook(fullWebhook);
-          console.log("✅ Bot webhook mode. URL:", fullWebhook);
-          return;
-        } catch (e) {
-          console.error("❌ setWebhook failed, fallback to polling:", e?.message || e);
-        }
-      }
-    }
-
-    // Polling fallback (dev/local). Deploy paytida 409 bo'lishi mumkin.
     await bot.launch();
-    startedByLaunch = true;
-    console.log("✅ Bot polling mode. PUBLIC:", PUBLIC_BASE);
+    console.log("✅ Bot started. PUBLIC:", PUBLIC_BASE);
   })();
 
-  // Graceful shutdown
-  process.once("SIGINT", () => {
-    if (!startedByLaunch) return;
-    try {
-      bot.stop("SIGINT");
-    } catch {
-      console.log("Bot already stopped (SIGINT)");
-    }
-  });
-
-  process.once("SIGTERM", () => {
-    if (!startedByLaunch) return;
-    try {
-      bot.stop("SIGTERM");
-    } catch {
-      console.log("Bot already stopped (SIGTERM)");
-    }
-  });
+  process.once("SIGINT", () => bot.stop("SIGINT"));
+  process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
   return bot;
 }
