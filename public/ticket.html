@@ -53,13 +53,12 @@
   </div>
 
 <script>
-  // ====== i18n ======
   const lang = (localStorage.getItem("lang") || "uz").toLowerCase();
   const T = {
     uz: {
       ticket: "Ticket",
       loading: "Yuklanmoqda...",
-      noId: "ID topilmadi. QR link shunday bo‘lishi kerak: ticket.html?id=XXXX",
+      noId: "ID topilmadi. QR link: ticket.html?id=XXXX",
       number: "Raqam",
       status: "Holat",
       now: "Hozir",
@@ -68,16 +67,15 @@
       eta: "ETA",
       servedBtn: "✅ Xizmat ko‘rsatildi",
       jpgBtn: "⬇️ JPG yuklab olish",
-      servedWarn: "Diqqat: “Xizmat ko‘rsatildi”ni bossangiz, bu sizga xizmat ko‘rsatilgan deb belgilanadi va navbatingiz o‘tib ketgan hisoblanadi.",
-      confirmServed: "Rostdan ham xizmat ko‘rsatildi deb belgilaysizmi?",
+      servedWarn: "Diqqat: bosilsa served deb belgilanadi va o‘rtacha vaqt hisoblanadi.",
+      confirmServed: "Rostdan ham served qilasizmi?",
       statusMap: { waiting:"Waiting", missed:"Missed", cancelled:"Cancelled", served:"Served" },
-      saved: "Yuklab olindi",
       openMain: "Asosiy sahifa"
     },
     ru: {
       ticket: "Талон",
       loading: "Загрузка...",
-      noId: "ID не найден. QR ссылка должна быть: ticket.html?id=XXXX",
+      noId: "Нет ID. QR ссылка: ticket.html?id=XXXX",
       number: "Номер",
       status: "Статус",
       now: "Сейчас",
@@ -86,34 +84,31 @@
       eta: "ETA",
       servedBtn: "✅ Обслужено",
       jpgBtn: "⬇️ Скачать JPG",
-      servedWarn: "Внимание: если нажмёте “Обслужено”, это будет означать, что вас обслужили и ваша очередь считается пройденной.",
+      servedWarn: "Внимание: отметит как обслужено и будет считаться в среднем времени.",
       confirmServed: "Точно отметить как обслужено?",
       statusMap: { waiting:"Ожидание", missed:"Пропущен", cancelled:"Отменён", served:"Обслужен" },
-      saved: "Скачано",
       openMain: "Главная"
     },
     en: {
       ticket: "Ticket",
       loading: "Loading...",
-      noId: "Missing ID. QR link must be: ticket.html?id=XXXX",
+      noId: "Missing ID. QR link: ticket.html?id=XXXX",
       number: "Number",
       status: "Status",
-      now: "Now serving",
+      now: "Now",
       remain: "Ahead",
       name: "Full name",
       eta: "ETA",
       servedBtn: "✅ Served",
       jpgBtn: "⬇️ Download JPG",
-      servedWarn: "Warning: pressing “Served” marks your ticket as served and your turn will be considered passed.",
+      servedWarn: "Warning: marks served and used for average service time.",
       confirmServed: "Mark as served?",
       statusMap: { waiting:"Waiting", missed:"Missed", cancelled:"Cancelled", served:"Served" },
-      saved: "Downloaded",
       openMain: "Home"
     }
   };
   const tr = T[lang] || T.uz;
 
-  // labels
   document.title = tr.ticket;
   document.getElementById("tTitle").textContent = tr.ticket;
   document.getElementById("lNumber").textContent = tr.number;
@@ -126,7 +121,6 @@
   document.getElementById("btnJpg").textContent = tr.jpgBtn;
   document.getElementById("servedNote").textContent = tr.servedWarn;
 
-  // ====== helpers ======
   const qs = new URLSearchParams(location.search);
   const id = qs.get("id");
 
@@ -144,17 +138,14 @@
     }catch{ return "—"; }
   }
 
-  // ====== canvas draw ======
   async function drawTicketCanvas(data){
     const c = document.getElementById("ticketCanvas");
     const ctx = c.getContext("2d");
 
-    // white bg
     ctx.clearRect(0,0,c.width,c.height);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0,0,c.width,c.height);
 
-    // header
     ctx.fillStyle = "#111827";
     ctx.font = "bold 48px Arial";
     ctx.fillText(`#${data.number ?? "-"}`, 40, 90);
@@ -180,11 +171,9 @@
     ctx.font = "18px Arial";
     ctx.fillText(`${fmtDate(data.createdAt)}`, 40, 385);
 
-    // QR
     if (data.qrPngBase64){
       const img = new Image();
       await new Promise((resolve)=>{ img.onload = resolve; img.onerror = resolve; img.src = data.qrPngBase64; });
-      // draw centered
       const size = 380;
       const x = Math.round((c.width - size)/2);
       const y = 430;
@@ -203,7 +192,6 @@
     a.click();
   }
 
-  // ====== load ticket ======
   async function load(){
     if (!id){
       showError(tr.noId);
@@ -221,21 +209,17 @@
       return;
     }
 
-    // ticket object
     const t = j.ticket || {};
     const statusRaw = (t.status || "").toLowerCase();
     const statusText = (tr.statusMap[statusRaw] || t.status || "-");
-
     const remaining = Math.max(0, (t.number || 0) - (j.nowServing || 0));
+    const fullName = t.fullName || t.full_name || "-";
 
     document.getElementById("tSub").textContent = `ORG: ${t.orgId || t.org_id || "-"} • ${fmtDate(t.createdAt || t.created_at)}`;
     document.getElementById("vNumber").textContent = t.number ?? "-";
     document.getElementById("vStatus").textContent = statusText;
     document.getElementById("vNow").textContent = j.nowServing ?? "-";
     document.getElementById("vRemain").textContent = remaining;
-
-    // ism familiya (serverdan full_name kelsa yaxshi, bo'lmasa '-' )
-    const fullName = t.fullName || t.full_name || "-";
     document.getElementById("vName").textContent = fullName;
 
     const etaMin = (j.avgServiceSec ? Math.round((remaining * j.avgServiceSec)/60) : null);
@@ -247,11 +231,11 @@
       statusText,
       nowServing: j.nowServing,
       remaining,
-      fullName: (fullName === "-" ? "" : fullName),
+      fullName,
       etaMinutes: etaMin,
       createdAt: t.createdAt || t.created_at,
-      qrPngBase64: j.ticket?.qrPngBase64 || j.qrPngBase64 || null,
-      qrData: j.ticket?.qrData || j.qrData || (location.origin + "/ticket.html?id=" + id)
+      qrPngBase64: j.qrPngBase64 || t.qrPngBase64 || null,
+      qrData: j.qrData || t.qrData || (location.origin + "/ticket.html?id=" + id)
     });
   }
 
@@ -271,7 +255,6 @@
       alert((j && j.error) ? j.error : ("API error: " + r.status));
       return;
     }
-    // qayta yuklaymiz
     await load();
   });
 
