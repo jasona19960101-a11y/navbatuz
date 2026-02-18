@@ -7,6 +7,11 @@ import { Telegraf, Markup } from "telegraf";
 // Bot instance for server-side notifications
 let __botRef = null;
 
+export function getBot() {
+  return __botRef;
+}
+
+
 export async function tgSend(chatId, text, extra = {}) {
   if (!__botRef) return false;
   try {
@@ -411,16 +416,28 @@ export function startBot({
   });
 
   (async () => {
-    // agar webhook qolib ketgan bo'lsa, polling ishlamay qoladi
+    const WEBHOOK_URL = process.env.WEBHOOK_URL;
+
+    if (WEBHOOK_URL) {
+      const base = WEBHOOK_URL.replace(/\/$/, "");
+      try {
+        await bot.telegram.setWebhook(`${base}/telegram`, { drop_pending_updates: true });
+      } catch (e) {
+        console.error("❌ setWebhook failed:", e);
+      }
+      console.log("✅ Bot webhook mode. WEBHOOK:", `${base}/telegram`);
+      return;
+    }
+
+    // Polling mode
     try {
       await bot.telegram.deleteWebhook({ drop_pending_updates: true });
     } catch {}
 
     await bot.launch();
-    console.log("✅ Bot started. PUBLIC:", PUBLIC_BASE);
+    console.log("✅ Bot polling mode. PUBLIC:", PUBLIC_BASE);
   })();
-
-  process.once("SIGINT", () => bot.stop("SIGINT"));
+process.once("SIGINT", () => bot.stop("SIGINT"));
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 
   return bot;
