@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import { Pool } from "pg";
 import QRCode from "qrcode";
+import { startBot } from "./bot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -109,6 +110,10 @@ async function initDb() {
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_served_at ON tickets(org_id, served_at);`); } catch {}
+
+  // safety: org bo'yicha raqam dublikat bo'lib qolmasin (tartib buzilmasin)
+  // Eslatma: eski DB'da dublikat bo'lsa, bu index yaratilmaydi (try/catch). Yangi DB uchun 100% foydali.
+  try { await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uq_tickets_org_number ON tickets(org_id, number);`); } catch {}
 }
 
 async function computeAvgServiceSec(orgId) {
@@ -830,7 +835,15 @@ app.get("*", (req, res) => {
 (async function start() {
   try {
     await initDb();
-    app.listen(PORT, () => console.log(`✅ NAVBATUZ running on :${PORT}`));
+    const server = app.listen(PORT, () => console.log(`✅ NAVBATUZ running on :${PORT}`));
+
+    // Telegram bot (agar BOT_TOKEN berilgan bo'lsa) — bitta DB va bitta /api/take orqali ishlaydi.
+    startBot({
+      port: PORT,
+      publicUrl: publicBaseUrl(),
+    });
+
+    return server;
   } catch (e) {
     console.error("❌ Failed to start:", e);
     process.exit(1);
