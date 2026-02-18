@@ -358,6 +358,11 @@ export function startBot({ app, port, publicUrl }) {
   });
 
   // ---- Start: webhook preferred, polling fallback ----
+  // Telegraf.stop() throws "Bot is not running!" if we never called bot.launch().
+  // In webhook mode (webhookCallback + setWebhook), we DON'T call bot.launch().
+  // So we track whether launch() was used.
+  let startedByLaunch = false;
+
   (async () => {
     try {
       // Har ehtimolga qarshi eski webhookni tozalab qo'yamiz (pollingda muammo bermasin)
@@ -386,23 +391,28 @@ export function startBot({ app, port, publicUrl }) {
 
     // Polling fallback (dev/local). Deploy paytida 409 bo'lishi mumkin.
     await bot.launch();
+    startedByLaunch = true;
     console.log("✅ Bot polling mode. PUBLIC:", PUBLIC_BASE);
   })();
-  process.once("SIGINT", () => {
-  try {
-    bot.stop("SIGINT");
-  } catch (e) {
-    console.log("Bot already stopped (SIGINT)");
-  }
-});
 
-process.once("SIGTERM", () => {
-  try {
-    bot.stop("SIGTERM");
-  } catch (e) {
-    console.log("Bot already stopped (SIGTERM)");
-  }
-});
+  // Graceful shutdown
+  process.once("SIGINT", () => {
+    if (!startedByLaunch) return;
+    try {
+      bot.stop("SIGINT");
+    } catch {
+      console.log("Bot already stopped (SIGINT)");
+    }
+  });
+
+  process.once("SIGTERM", () => {
+    if (!startedByLaunch) return;
+    try {
+      bot.stop("SIGTERM");
+    } catch {
+      console.log("Bot already stopped (SIGTERM)");
+    }
+  });
+
   return bot;
 }
-
