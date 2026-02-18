@@ -1,3 +1,4 @@
+const r = await fetch("/api/ticket/served", {
 <!doctype html>
 <html lang="en">
 <head>
@@ -289,6 +290,15 @@
                 </select>
                 <div class="hint" id="hintOrg">Hozircha test uchun faqat Chinoz tumani (Toshkent viloyati) muassasalari bor.</div>
               </div>
+<!-- FULL NAME -->
+<div style="margin-top:12px;">
+  <div class="row">
+    <div class="label"><span class="icon">👤</span><span id="lblFullName">Ism familiya</span></div>
+    <span class="badge" id="bName">Required</span>
+  </div>
+  <input id="fullNameInp" class="select" placeholder="Masalan: Ali Valiyev" />
+  <div class="hint" id="hintName">Navbat olishdan oldin ism familiyangizni kiriting.</div>
+</div>
 
               <button id="saveBtn" class="btn" disabled>✅ Tanlovni saqlash</button>
               <div id="toast" class="toast hidden"></div>
@@ -339,9 +349,11 @@
                   <div id="warnBox" class="warn hidden"></div>
 
                   <div class="subActions">
-                    <button id="refreshBtn" class="btn2">🔄 Yangilash</button>
-                    <button id="cancelBtn" class="btn2">🗑 Bekor</button>
-                  </div>
+  <button id="refreshBtn" class="btn2">🔄 Yangilash</button>
+  <button id="cancelBtn" class="btn2">🗑 Bekor</button>
+  <button id="servedBtn" class="btn2">✅ Xizmat ko‘rsatildi</button>
+</div>
+
                 </div>
               </div>
               <!-- /TICKET -->
@@ -396,6 +408,12 @@
         bot: "Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).",
         saved: "✅ Saqlandi!",
         notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q.",
+        lblFullName: "Ism familiya",
+hintName: "Navbat olishdan oldin ism familiyangizni kiriting.",
+needName: "Ism familiya kiriting.",
+servedBtn: "✅ Xizmat ko‘rsatildi",
+servedOk: "✅ Served qilindi (o‘rtacha vaqt hisoblanadi).",
+
         take: "🎟 Navbat olish",
         ticket: "Navbat",
         online: "Online • Ready",
@@ -427,6 +445,12 @@
         bot: "Можно взять очередь и через Telegram-бот (быстро и удобно).",
         saved: "✅ Сохранено!",
         notFoundOrg: "Пока нет учреждений для выбранного района/города.",
+        lblFullName: "Имя Фамилия",
+hintName: "Перед тем как взять очередь, введите имя и фамилию.",
+needName: "Введите имя и фамилию.",
+servedBtn: "✅ Обслужено",
+servedOk: "✅ Отмечено как обслужено (среднее время обновится).",
+
         take: "🎟 Взять очередь",
         ticket: "Очередь",
         online: "Online • Ready",
@@ -458,6 +482,12 @@
         bot: "You can also take a ticket via Telegram bot (fast and convenient).",
         saved: "✅ Saved!",
         notFoundOrg: "No organizations for this district/city yet.",
+        lblFullName: "Full name",
+hintName: "Enter your full name before taking a ticket.",
+needName: "Enter full name.",
+servedBtn: "✅ Served",
+servedOk: "✅ Marked served (average time will improve).",
+
         take: "🎟 Take a ticket",
         ticket: "Queue",
         online: "Online • Ready",
@@ -556,11 +586,13 @@
     let orgsByUzKey = {};
 
     const state = {
-      lang: localStorage.getItem("lang") || "uz",
-      regionId: localStorage.getItem("regionId") || "",
-      unitId: localStorage.getItem("unitId") || "",
-      orgId: localStorage.getItem("orgId") || ""
-    };
+  lang: localStorage.getItem("lang") || "uz",
+  regionId: localStorage.getItem("regionId") || "",
+  unitId: localStorage.getItem("unitId") || "",
+  orgId: localStorage.getItem("orgId") || "",
+  fullName: localStorage.getItem("fullName") || ""
+};
+
 
     // ===== Ticket state =====
     const TICKET_KEY = "navbatuz_ticket";
@@ -755,6 +787,9 @@
 
       $("lblTicket").textContent = t.ticket;
       $("takeBtn").textContent = t.take;
+      $("lblFullName").textContent = t.lblFullName;
+$("hintName").textContent = t.hintName;
+
     }
 
     function rebuildRegions(){
@@ -849,13 +884,16 @@
       $("ticketState").textContent = txt || "—";
     }
 
-    function updateSaveBtn(){
-      const ok = !!(state.lang && state.regionId && state.unitId && state.orgId);
-      $("saveBtn").disabled = !ok;
+   function updateSaveBtn(){
+  const okSelect = !!(state.lang && state.regionId && state.unitId && state.orgId);
+  const okName = !!(state.fullName && state.fullName.length >= 3);
 
-      const hasActive = (ticket && ticket.status === "active");
-      $("takeBtn").disabled = !ok || hasActive;
-    }
+  $("saveBtn").disabled = !(okSelect && okName);
+
+  const hasActive = (ticket && ticket.status === "active");
+  $("takeBtn").disabled = !(okSelect && okName) || hasActive;
+}
+
 
     function computeAheadBehind(nowServing, lastNumber, myNumber){
       if (![nowServing,lastNumber,myNumber].every(x=>isFinite(x))) return { ahead:null, behind:null };
@@ -1023,19 +1061,19 @@
     }
 
     // ===== Ticket API logic =====
-    async function takeTicket(){
-      const t = getT(state.lang);
-      if (!state.orgId) return;
+   if (!state.fullName || state.fullName.length < 3) {
+  toast(getT(state.lang).needName);
+  updateSaveBtn();
+  return;
+}
 
-      $("takeBtn").disabled = true;
-      setTicketStateBadge("…");
+const j = await apiPost("/api/take", {
+  orgId: state.orgId,
+  platform: "web",
+  userId: null,
+  fullName: state.fullName
+});
 
-      try{
-        const j = await apiPost("/api/take", {
-          orgId: state.orgId,
-          platform: "web",
-          userId: null
-        });
 
         if (!j || !j.ok) throw new Error(j?.error || "take failed");
 
@@ -1163,6 +1201,11 @@
 
       if (ticket && ticket.status === "active") fetchTicketStatus().catch(()=>{});
     });
+$("fullNameInp").addEventListener("input", () => {
+  state.fullName = ($("fullNameInp").value || "").trim().replace(/\s+/g, " ").slice(0, 80);
+  localStorage.setItem("fullName", state.fullName);
+  updateSaveBtn();
+});
 
     $("regionSel").addEventListener("change", () => {
       state.regionId = $("regionSel").value;
@@ -1210,12 +1253,37 @@
       });
     });
     $("cancelBtn").addEventListener("click", () => cancelTicket());
+    $("servedBtn").addEventListener("click", async () => {
+  if (!ticket?.ticketId) {
+    toast("ticketId yo‘q");
+    return;
+  }
+
+  try{
+    const j = await apiPost("/api/ticket/served", {
+      ticketId: ticket.ticketId
+    });
+
+    if (!j.ok) throw new Error(j.error || "served error");
+
+    toast(getT(state.lang).servedOk);
+
+    // statusni yangilaymiz
+    fetchTicketStatus().catch(()=>{});
+
+  }catch(e){
+    console.error(e);
+    toast("Served xato");
+  }
+});
+
 
     // ===== Boot =====
     (async function boot(){
       try{
         $("langSel").value = state.lang;
         applyLang(state.lang);
+$("fullNameInp").value = state.fullName || "";
 
         try {
           await apiGet("/api/health");
@@ -1257,3 +1325,4 @@
   </script>
 </body>
 </html>
+
