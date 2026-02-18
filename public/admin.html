@@ -24,7 +24,7 @@
         radial-gradient(900px 500px at 90% 35%, rgba(120,130,255,.18), transparent 55%),
         linear-gradient(180deg,var(--bg1),var(--bg2));
     }
-    .wrap{max-width:1180px;margin:0 auto;padding:18px}
+    .wrap{max-width:1200px;margin:0 auto;padding:18px}
     .top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
     .brand{display:flex;gap:10px;align-items:center}
     .badge{
@@ -34,19 +34,16 @@
     .title{font-weight:900;letter-spacing:.6px;font-size:18px}
     .sub{color:var(--muted);font-size:13px;margin-top:2px}
 
-    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+    .grid{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}
     @media (max-width:980px){.grid{grid-template-columns:1fr}}
 
     .card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .sp{height:10px}
-
     input,select{
       background:rgba(255,255,255,.06);color:var(--t);
       border:1px solid var(--b);border-radius:12px;padding:10px 12px;outline:none;
     }
     input::placeholder{color:rgba(232,238,255,.45)}
-    input.mini{min-width:160px}
     input.mid{min-width:240px}
     input.wide{min-width:320px}
 
@@ -80,21 +77,20 @@
     .msg .warn{color:var(--warn)}
 
     table{width:100%;border-collapse:collapse;margin-top:10px;overflow:hidden;border-radius:14px}
-    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;vertical-align:middle}
     th{color:rgba(232,238,255,.75);text-align:left;font-weight:800}
     tr:hover td{background:rgba(255,255,255,.03)}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
     .pill{
       display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);
       background:rgba(255,255,255,.06);font-size:12px
     }
     .pill.ok{border-color:rgba(82,255,168,.35);background:rgba(82,255,168,.10)}
     .pill.warn{border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.10)}
-    .pill.bad{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.10)}
-
-    .rightBox .hint{color:rgba(232,238,255,.75);font-weight:800}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
     .small{font-size:12px;color:rgba(232,238,255,.6)}
     .divider{height:1px;background:rgba(255,255,255,.12);margin:12px 0}
+    .btnMini{padding:7px 10px;border-radius:10px;font-size:12px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
   </style>
 </head>
 <body>
@@ -105,7 +101,7 @@
         <div class="badge">🛠️</div>
         <div>
           <div class="title">NAVBATUZ — Admin Panel</div>
-          <div class="sub">Live queue • Search • Auto refresh • Next / Delete / DeleteAll / Reset</div>
+          <div class="sub">Viloyat → Tuman → Muassasa • Aktiv navbat • Next / Delete / Skip</div>
         </div>
       </div>
 
@@ -116,12 +112,28 @@
     </div>
 
     <div class="grid">
+
       <!-- LEFT -->
       <div class="card">
+
         <div class="row">
-          <input id="orgId" class="mid" placeholder="orgId (masalan: 160 yoki UUID)" />
+          <select id="selRegion" onchange="onRegionChange()">
+            <option value="">Viloyat tanlang...</option>
+          </select>
+
+          <select id="selDistrict" onchange="onDistrictChange()">
+            <option value="">Tuman tanlang...</option>
+          </select>
+
+          <select id="selOrg" onchange="onOrgChange()">
+            <option value="">Muassasa tanlang...</option>
+          </select>
+
           <input id="adminKey" class="wide" placeholder="ADMIN_KEY (Render env dagi)" />
-          <input id="search" class="mid" placeholder="Search: #raqam / ism / id / status" oninput="renderTable()" />
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <input id="search" class="mid" placeholder="Search: ism / #raqam / status" oninput="renderTable()" />
           <select id="statusFilter" onchange="renderTable()">
             <option value="all">Status: hammasi</option>
             <option value="waiting">waiting</option>
@@ -143,44 +155,46 @@
             <div class="v" id="kAvg">—</div>
           </div>
           <div class="kpi">
-            <div class="l">Tickets count</div>
+            <div class="l">Aktiv navbat</div>
             <div class="v" id="kCnt">—</div>
           </div>
         </div>
 
         <div id="msg" class="msg"></div>
 
+        <!-- NEXT tugma faqat muassasa tanlangandan keyin ko'rinadi -->
+        <div class="toolbar" id="orgToolbar" style="display:none">
+          <button class="primary" onclick="nextOne()">➡️ NEXT (navbatni chaqirish)</button>
+          <span class="small">* Xizmat tugagach shu tugmani bosib keyingi navbatchini chaqirasiz</span>
+        </div>
+
         <table>
           <thead>
             <tr>
-              <th style="width:70px">Pick</th>
-              <th style="width:90px">#</th>
-              <th>Full name</th>
+              <th style="width:80px">#</th>
+              <th>Ism familiya</th>
+              <th style="width:120px">ETA</th>
+              <th style="width:190px">Ticket olgan</th>
               <th style="width:110px">Status</th>
-              <th style="width:250px">Ticket ID</th>
-              <th style="width:180px">Created</th>
+              <th style="width:230px">Amallar</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
         </table>
 
-        <div class="row" style="margin-top:10px">
-          <button class="danger" onclick="deleteSelected()">🗑 Delete selected</button>
-          <span class="small">(* faqat waiting/missed lar cancel bo‘ladi)</span>
+        <div class="small" style="margin-top:10px">
+          * ETA = (qolgan navbat soni) × avgServiceSec. Agar avg topilmasa “—”.
         </div>
       </div>
 
       <!-- RIGHT -->
-      <div class="card rightBox">
-        <div class="hint">Tez amallar</div>
-        <div class="small" style="margin-top:6px">
-          Header: <span class="mono">X-Admin-Key</span> orqali himoyalangan.
-        </div>
+      <div class="card">
+        <div style="font-weight:900">Tez amallar</div>
+        <div class="small">Tanlangan muassasa bo‘yicha.</div>
 
         <div class="divider"></div>
 
         <div class="row">
-          <button onclick="nextOne()">➡️ NEXT</button>
           <button class="warn" onclick="deleteAll()">🧹 Delete ALL</button>
           <button class="danger" onclick="resetOrg()">💣 RESET</button>
         </div>
@@ -200,29 +214,24 @@
           <button onclick="applyAutoInterval()">✅ Apply</button>
         </div>
 
-        <div class="small" style="margin-top:10px">
-          Tip: Search’da <b>#23</b> yoki <b>Ali</b> yoki ticket <b>UUID</b> yoz.
-        </div>
-
         <div class="divider"></div>
 
         <div class="small">
-          Admin sahifa manzili: <span class="mono">/admin.html</span><br/>
-          Misol: <span class="mono">https://domain.com/admin.html</span>
+          Admin URL: <span class="mono">/admin.html</span>
         </div>
       </div>
-    </div>
 
+    </div>
   </div>
 
 <script>
+  let GEO = null;
   let lastData = null;
   let autoTimer = null;
   let autoOn = false;
 
   function $(id){ return document.getElementById(id); }
   function esc(s){ return (s||"").toString().replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
-  function org(){ return ($("orgId").value || "").trim(); }
   function key(){ return ($("adminKey").value || "").trim(); }
 
   function setMsg(type, text){
@@ -241,10 +250,100 @@
     return data;
   }
 
-  function statusPill(s){
-    if (s === "waiting") return `<span class="pill ok">waiting</span>`;
-    if (s === "missed") return `<span class="pill warn">missed</span>`;
-    return `<span class="pill">${esc(s)}</span>`;
+  // -------- GEO helpers (moslashuvchan) --------
+  function getRegions(){ return GEO?.regions || GEO?.viloyatlar || []; }
+  function getDistricts(){ return GEO?.districts || GEO?.tumanlar || GEO?.units || []; }
+
+  function regionName(r){ return r.name_uz || r.nameUz || r.name || r.title || String(r.id); }
+  function districtName(d){ return d.name_uz || d.nameUz || d.name || d.title || String(d.id); }
+  function orgName(o){ return o.name_uz || o.nameUz || o.name || o.title || String(o.id); }
+
+  function districtRegionId(d){
+    return d.region_id ?? d.regionId ?? d.parent_id ?? d.parentId ?? d.region ?? null;
+  }
+
+  function getOrgsByUnitId(unitId){
+    // asosiy mapping (senda bor)
+    if (GEO?.orgsByUnitId) return GEO.orgsByUnitId[String(unitId)] || [];
+
+    // fallback mapping (eski validateOrgId shu bilan ishlaydi)
+    if (GEO?.orgsByUnitUzKey){
+      const m = GEO.orgsByUnitUzKey;
+      for (const k of Object.keys(m)){
+        if (k.includes(String(unitId))) return m[k] || [];
+      }
+    }
+    return [];
+  }
+
+  function selectedRegionId(){ return ($("selRegion").value || "").trim(); }
+  function selectedDistrictId(){ return ($("selDistrict").value || "").trim(); }
+  function selectedOrgId(){ return ($("selOrg").value || "").trim(); }
+
+  async function init(){
+    try{
+      const r = await fetch("/api/geo");
+      GEO = await r.json();
+      fillRegions();
+      setMsg("warn","Viloyat → Tuman → Muassasa tanlang, ADMIN_KEY kiriting.");
+    }catch(e){
+      setMsg("bad","/api/geo yuklanmadi: " + e.message);
+    }
+  }
+
+  function fillRegions(){
+    const sel = $("selRegion");
+    sel.innerHTML = `<option value="">Viloyat tanlang...</option>`;
+    for (const r of getRegions()){
+      sel.innerHTML += `<option value="${esc(r.id)}">${esc(regionName(r))}</option>`;
+    }
+    $("selDistrict").innerHTML = `<option value="">Tuman tanlang...</option>`;
+    $("selOrg").innerHTML = `<option value="">Muassasa tanlang...</option>`;
+    $("orgToolbar").style.display = "none";
+  }
+
+  function onRegionChange(){
+    const rid = selectedRegionId();
+    const selD = $("selDistrict");
+    selD.innerHTML = `<option value="">Tuman tanlang...</option>`;
+    $("selOrg").innerHTML = `<option value="">Muassasa tanlang...</option>`;
+    $("orgToolbar").style.display = "none";
+    clearTable();
+
+    if (!rid) return;
+
+    const dlist = getDistricts().filter(d => String(districtRegionId(d)) === String(rid));
+    for (const d of dlist){
+      selD.innerHTML += `<option value="${esc(d.id)}">${esc(districtName(d))}</option>`;
+    }
+  }
+
+  function onDistrictChange(){
+    const did = selectedDistrictId();
+    const selO = $("selOrg");
+    selO.innerHTML = `<option value="">Muassasa tanlang...</option>`;
+    $("orgToolbar").style.display = "none";
+    clearTable();
+
+    if (!did) return;
+
+    // unitId = district id (senda Chinaz=160 kabi)
+    const orgs = getOrgsByUnitId(did);
+    for (const o of orgs){
+      selO.innerHTML += `<option value="${esc(o.id)}">${esc(orgName(o))}</option>`;
+    }
+  }
+
+  function onOrgChange(){
+    const oid = selectedOrgId();
+    $("orgToolbar").style.display = oid ? "flex" : "none";
+    loadQueue();
+  }
+
+  function clearTable(){
+    $("tbody").innerHTML = `<tr><td colspan="6" class="small">Muassasa tanlang...</td></tr>`;
+    $("kNow").textContent="—"; $("kLast").textContent="—"; $("kAvg").textContent="—"; $("kCnt").textContent="—";
+    lastData = null;
   }
 
   function updateKPIs(data){
@@ -254,43 +353,69 @@
     $("kCnt").textContent  = (data?.tickets?.length ?? 0);
   }
 
+  function statusPill(s){
+    if (s === "waiting") return `<span class="pill ok">waiting</span>`;
+    if (s === "missed") return `<span class="pill warn">missed</span>`;
+    return `<span class="pill">${esc(s)}</span>`;
+  }
+
+  function etaText(t, nowServing, avgServiceSec){
+    const num = Number(t.number || 0);
+    if (!avgServiceSec) return "—";
+    const remaining = Math.max(0, num - Number(nowServing || 0));
+    const minutes = Math.max(0, Math.round((remaining * avgServiceSec) / 60));
+    return minutes + " min";
+  }
+
+  function createdText(t){
+    try{ return t.createdAt ? new Date(t.createdAt).toLocaleString() : ""; }
+    catch{ return t.createdAt || ""; }
+  }
+
   function renderTable(){
     const tb = $("tbody");
     const q = ($("search").value || "").trim().toLowerCase();
     const sf = $("statusFilter").value;
+
+    const nowServing = lastData?.nowServing ?? 0;
+    const avg = lastData?.avgServiceSec ?? null;
 
     const list = (lastData?.tickets || []).filter(t => {
       if (sf !== "all" && (t.status !== sf)) return false;
       if (!q) return true;
       const num = (t.number ?? "").toString();
       const name = (t.fullName || "").toLowerCase();
-      const id = (t.id || "").toLowerCase();
       const st = (t.status || "").toLowerCase();
-      return num.includes(q.replace("#","")) || name.includes(q) || id.includes(q) || st.includes(q);
+      return num.includes(q.replace("#","")) || name.includes(q) || st.includes(q);
     });
 
+    if (!list.length){
+      tb.innerHTML = `<tr><td colspan="6" class="small">Aktiv navbat topilmadi.</td></tr>`;
+      return;
+    }
+
     tb.innerHTML = list.map(t => {
-      const created = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
+      const eta = etaText(t, nowServing, avg);
+      const ct = createdText(t);
       return `
         <tr>
-          <td><input type="radio" name="pick" value="${esc(t.id)}"></td>
           <td><span class="pill">#${esc(t.number)}</span></td>
           <td>${esc(t.fullName || "")}</td>
+          <td><b>${esc(eta)}</b></td>
+          <td class="small">${esc(ct)}</td>
           <td>${statusPill(t.status)}</td>
-          <td class="mono">${esc(t.id)}</td>
-          <td class="small">${esc(created)}</td>
+          <td>
+            <button class="btnMini danger" onclick="deleteTicket('${esc(t.id)}')">Delete</button>
+            <button class="btnMini warn" onclick="skipTicket('${esc(t.id)}')">Skip</button>
+          </td>
         </tr>
       `;
     }).join("");
-
-    if (!list.length) {
-      tb.innerHTML = `<tr><td colspan="6" class="small">Hech narsa topilmadi.</td></tr>`;
-    }
   }
 
   async function loadQueue(){
-    const orgId = org();
-    if (!orgId) return setMsg("bad","orgId kiriting");
+    const orgId = selectedOrgId();
+    if (!orgId) return setMsg("warn","Muassasa tanlang");
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
 
     $("btnRefresh").disabled = true;
@@ -299,7 +424,7 @@
       lastData = data;
       updateKPIs(data);
       renderTable();
-      setMsg("ok", `Yangilandi. Tickets: ${(data.tickets||[]).length}`);
+      setMsg("ok", `Yangilandi. Aktiv navbat: ${(data.tickets||[]).length}`);
     }catch(e){
       setMsg("bad", e.message);
     }finally{
@@ -307,12 +432,13 @@
     }
   }
 
+  // --- Actions ---
   async function nextOne(){
-    const orgId = org();
-    if (!orgId) return setMsg("bad","orgId kiriting");
+    const orgId = selectedOrgId();
+    if (!orgId) return setMsg("warn","Muassasa tanlang");
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
-
     if (!confirm("NEXT qilamizmi? (navbat oldinga suriladi)")) return;
+
     try{
       await api(`/api/admin/next`, { method:"POST", body: JSON.stringify({ orgId }) });
       setMsg("ok","NEXT OK");
@@ -322,15 +448,12 @@
     }
   }
 
-  async function deleteSelected(){
-    const pick = document.querySelector('input[name="pick"]:checked');
-    if (!pick) return setMsg("bad","Ticket tanlang");
+  async function deleteTicket(ticketId){
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
-
-    if (!confirm("Tanlangan ticket CANCEL qilinsinmi?")) return;
+    if (!confirm("Ticket CANCEL (delete) qilinsinmi?")) return;
 
     try{
-      await api(`/api/admin/delete`, { method:"POST", body: JSON.stringify({ ticketId: pick.value }) });
+      await api(`/api/admin/delete`, { method:"POST", body: JSON.stringify({ ticketId }) });
       setMsg("ok","Delete OK");
       await loadQueue();
     }catch(e){
@@ -338,11 +461,25 @@
     }
   }
 
-  async function deleteAll(){
-    const orgId = org();
-    if (!orgId) return setMsg("bad","orgId kiriting");
+  async function skipTicket(ticketId){
+    const orgId = selectedOrgId();
+    if (!orgId) return setMsg("warn","Muassasa tanlang");
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
+    if (!confirm("O‘tkazib yuboramizmi? (missed)")) return;
 
+    try{
+      await api(`/api/admin/skip`, { method:"POST", body: JSON.stringify({ orgId, ticketId }) });
+      setMsg("ok","Skip OK");
+      await loadQueue();
+    }catch(e){
+      setMsg("bad", e.message);
+    }
+  }
+
+  async function deleteAll(){
+    const orgId = selectedOrgId();
+    if (!orgId) return setMsg("warn","Muassasa tanlang");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
     if (!confirm("HAMMASI (waiting/missed) CANCEL bo‘lsinmi?")) return;
 
     try{
@@ -355,10 +492,9 @@
   }
 
   async function resetOrg(){
-    const orgId = org();
-    if (!orgId) return setMsg("bad","orgId kiriting");
+    const orgId = selectedOrgId();
+    if (!orgId) return setMsg("warn","Muassasa tanlang");
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
-
     if (!confirm("RESET xavfli: current=0 next=1 va waiting/missed CANCEL. Davom etamizmi?")) return;
 
     try{
@@ -370,28 +506,21 @@
     }
   }
 
+  // --- Auto refresh ---
   function toggleAuto(){
     autoOn = !autoOn;
-    if (autoOn) {
-      applyAutoInterval(true);
-    } else {
-      stopAuto();
-    }
+    if (autoOn) applyAutoInterval(true);
+    else stopAuto();
   }
-
   function stopAuto(){
     if (autoTimer) clearInterval(autoTimer);
     autoTimer = null;
     autoOn = false;
     $("btnAuto").textContent = "⏱ Auto: OFF";
   }
-
   function applyAutoInterval(forceOn=false){
-    const sec = Number($("autoEvery").value || 0);
-    if (!sec || sec <= 0) {
-      stopAuto();
-      return;
-    }
+    const sec = Number(($("autoEvery").value || 0));
+    if (!sec || sec <= 0) { stopAuto(); return; }
     if (forceOn) autoOn = true;
     if (!autoOn) autoOn = true;
 
@@ -401,9 +530,20 @@
     loadQueue();
   }
 
-  // Auto: default apply (10s) faqat orgId+key kiritilgandan keyin bosilsa yaxshi,
-  // shunga avtomatik start qilmaymiz.
-  setMsg("warn","orgId va ADMIN_KEY kiriting, keyin Yangilash yoki Apply (auto) bosing.");
+  // right panel select (hidden) – keep compatibility
+  // (we keep autoEvery default without UI clutter)
+  (function ensureAutoSelect(){
+    if (!$("autoEvery")){
+      const s = document.createElement("select");
+      s.id="autoEvery";
+      s.style.display="none";
+      s.innerHTML = `<option value="0">OFF</option><option value="10" selected>10s</option>`;
+      document.body.appendChild(s);
+    }
+  })();
+
+  init();
+  clearTable();
 </script>
 </body>
 </html>
