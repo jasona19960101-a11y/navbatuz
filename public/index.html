@@ -1,4 +1,3 @@
-const r = await fetch("/api/ticket/served", {
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,17 +7,11 @@ const r = await fetch("/api/ticket/served", {
   <meta name="theme-color" content="#0b1020" />
   <style>
     :root{
-      --bg0:#050712;
-      --bg1:#070a18;
-      --glass: rgba(255,255,255,.06);
-      --glass2: rgba(255,255,255,.09);
+      --bg0:#050712; --bg1:#070a18;
       --stroke: rgba(255,255,255,.12);
-      --text:#eaf0ff;
-      --muted: rgba(234,240,255,.70);
-      --muted2: rgba(234,240,255,.52);
+      --text:#eaf0ff; --muted2: rgba(234,240,255,.52);
       --shadow: 0 30px 100px rgba(0,0,0,.60);
       --r: 22px;
-
       --a1: rgba(120,82,255,.95);
       --a2: rgba(0,199,255,.70);
       --a3: rgba(0,255,163,.35);
@@ -36,21 +29,16 @@ const r = await fetch("/api/ticket/served", {
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-    .noise{
-      pointer-events:none;
-      position:fixed; inset:0;
+    .noise{pointer-events:none; position:fixed; inset:0; opacity:.35; mix-blend-mode: overlay;
       background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
-      mix-blend-mode: overlay;
-      opacity:.35;
     }
     .wrap{max-width:1100px;margin:0 auto;padding:26px 18px 44px;}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;}
     .logo{display:flex;align-items:center;gap:12px;user-select:none}
     .mark{
       width:42px;height:42px;border-radius:16px;
-      background:
-        radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.75), transparent 60%),
-        linear-gradient(135deg, var(--a1), var(--a2));
+      background: radial-gradient(10px 10px at 30% 30%, rgba(255,255,255,.75), transparent 60%),
+                  linear-gradient(135deg, var(--a1), var(--a2));
       border:1px solid rgba(255,255,255,.16);
       box-shadow: 0 18px 40px rgba(120,82,255,.18);
     }
@@ -62,14 +50,10 @@ const r = await fetch("/api/ticket/served", {
       border:1px solid rgba(255,255,255,.14);
       background: rgba(255,255,255,.05);
       backdrop-filter: blur(10px);
-      color: var(--muted);
       font-size:12px;
+      color: rgba(234,240,255,.70);
     }
-    .dot{
-      width:8px;height:8px;border-radius:50%;
-      background: rgba(0,255,163,.95);
-      box-shadow: 0 0 0 6px rgba(0,255,163,.12);
-    }
+    .dot{width:8px;height:8px;border-radius:50%; background: rgba(0,255,163,.95); box-shadow: 0 0 0 6px rgba(0,255,163,.12);}
     .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;}
     @media (max-width: 920px){.grid{grid-template-columns:1fr}}
     .card{
@@ -91,17 +75,10 @@ const r = await fetch("/api/ticket/served", {
     }
     .card-inner{position:relative;z-index:1;padding:20px 18px;}
     .hero-title{font-size:34px;letter-spacing:.2px;margin:6px 0 8px;line-height:1.08;}
-    .hero-sub{margin:0 0 14px;color:var(--muted);line-height:1.5;font-size:14px;max-width:62ch;}
-    .panel{
-      margin-top:14px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(9,12,24,.50);
-      padding:14px 14px;
-    }
+    .hero-sub{margin:0 0 14px;color:rgba(234,240,255,.70);line-height:1.5;font-size:14px;max-width:62ch;}
+    .panel{margin-top:14px;border-radius:18px;border:1px solid rgba(255,255,255,.10);background: rgba(9,12,24,.50);padding:14px;}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-    .label{font-size:12px;color:var(--muted2);display:flex;gap:8px;align-items:center;}
-    .label .icon{opacity:.9}
+    .label{font-size:12px;color:rgba(234,240,255,.52);display:flex;gap:8px;align-items:center;}
     .select{
       width:100%;
       appearance:none;
@@ -112,14 +89,9 @@ const r = await fetch("/api/ticket/served", {
       padding:12px 12px;
       outline:none;
       font-size:14px;
-      transition: .12s ease;
-    }
-    .select:focus{
-      border-color: rgba(0,199,255,.35);
-      box-shadow: 0 0 0 4px rgba(0,199,255,.12);
     }
     option{background:#0b1020;color:#eaf0ff;}
-    .hint{font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5}
+    .hint{font-size:12px;color:rgba(234,240,255,.52);margin-top:8px;line-height:1.5}
     .hr{height:1px;background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);margin:12px 0;}
     .btn{
       width:100%;
@@ -132,27 +104,9 @@ const r = await fetch("/api/ticket/served", {
       letter-spacing:.2px;
       background: linear-gradient(135deg, rgba(120,82,255,.95), rgba(0,199,255,.72), rgba(0,255,163,.40));
       box-shadow: 0 18px 50px rgba(0,199,255,.14);
-      transition: transform .10s ease;
       margin-top:12px;
     }
-    .btn:active{transform:scale(.99)}
     .btn[disabled]{opacity:.55;cursor:not-allowed}
-    .side .mini{
-      border-radius:18px;border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      padding:14px;margin-bottom:12px;
-    }
-    .mini h3{margin:0 0 8px;font-size:13px;letter-spacing:.2px;color:rgba(234,240,255,.88);}
-    .mini p{margin:0;font-size:12px;color:var(--muted2);line-height:1.5;}
-    .footer{margin-top:14px;color:rgba(234,240,255,.45);font-size:11px;text-align:center;}
-    .badge{
-      font-size:11px;padding:4px 8px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.05);
-      color: rgba(234,240,255,.78);
-      white-space:nowrap;
-    }
-    .stack{display:flex;flex-direction:column;gap:10px;}
     .toast{
       margin-top:10px;
       border-radius:14px;
@@ -163,57 +117,26 @@ const r = await fetch("/api/ticket/served", {
       color: rgba(234,240,255,.85);
     }
     .hidden{display:none !important;}
-    .ticketBox{
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.04);
-      padding:14px;
-    }
-    .ticketTop{
-      display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-      margin-bottom:10px;
-    }
-    .ticketNo{
-      font-size:30px;font-weight:900;letter-spacing:.5px;line-height:1;
-    }
-    .ticketMeta{
-      font-size:12px;color:var(--muted2);line-height:1.45;
-    }
-    .kpiGrid{
-      display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;
-    }
-    .kpi{
-      border-radius:14px;border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.16);
-      padding:10px 10px;
-    }
-    .kpi .k{font-size:11px;color:var(--muted2)}
+    .ticketBox{border-radius:18px;border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.04);padding:14px;}
+    .badge{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.05);color: rgba(234,240,255,.78);white-space:nowrap;}
+    .ticketTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;}
+    .ticketNo{font-size:30px;font-weight:900;letter-spacing:.5px;line-height:1;}
+    .ticketMeta{font-size:12px;color:rgba(234,240,255,.52);line-height:1.45;}
+    .kpiGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+    .kpi{border-radius:14px;border:1px solid rgba(255,255,255,.10);background: rgba(0,0,0,.16);padding:10px;}
+    .kpi .k{font-size:11px;color:rgba(234,240,255,.52)}
     .kpi .v{font-size:14px;font-weight:800;margin-top:4px}
-    .subActions{display:flex;gap:10px;margin-top:10px}
-    .btn2{
-      flex:1;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      padding:12px 12px;
-      border-radius:16px;
-      cursor:pointer;
-      font-weight:800;
-    }
-    .btn2:active{transform:scale(.99)}
-    .warn{
-      margin-top:10px;
-      border-radius:14px;
-      border:1px solid rgba(255,199,0,.22);
-      background: rgba(255,199,0,.08);
-      padding:10px 12px;
-      color: rgba(255,240,210,.92);
-      font-size:12px;
-      line-height:1.5;
-    }
+    .subActions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    .btn2{flex:1;min-width:170px;border:1px solid rgba(255,255,255,.14);background: rgba(255,255,255,.06);color: var(--text);
+      padding:12px;border-radius:16px;cursor:pointer;font-weight:800;}
+    .warn{margin-top:10px;border-radius:14px;border:1px solid rgba(255,199,0,.22);background: rgba(255,199,0,.08);
+      padding:10px 12px;color: rgba(255,240,210,.92);font-size:12px;line-height:1.5;}
+    .side .mini{border-radius:18px;border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.04);padding:14px;margin-bottom:12px;}
+    .mini h3{margin:0 0 8px;font-size:13px;color:rgba(234,240,255,.88);}
+    .mini p{margin:0;font-size:12px;color:rgba(234,240,255,.52);line-height:1.5;}
+    .footer{margin-top:14px;color:rgba(234,240,255,.45);font-size:11px;text-align:center;}
   </style>
 </head>
-
 <body>
   <div class="noise"></div>
 
@@ -237,12 +160,12 @@ const r = await fetch("/api/ticket/served", {
           <p class="hero-sub" id="heroSub">—</p>
 
           <div class="panel">
-            <div class="stack">
+            <div>
 
               <!-- LANGUAGE -->
               <div>
                 <div class="row">
-                  <div class="label"><span class="icon">🌐</span><span id="lblLang">Til</span></div>
+                  <div class="label"><span>🌐</span><span id="lblLang">Til</span></div>
                   <span class="badge" id="bLang">Now</span>
                 </div>
                 <select id="langSel" class="select">
@@ -250,7 +173,7 @@ const r = await fetch("/api/ticket/served", {
                   <option value="ru">Русский</option>
                   <option value="en">English</option>
                 </select>
-                <div class="hint" id="hintLang">Tilni ro‘yxatdan tanlang (yozib kiritish yo‘q).</div>
+                <div class="hint" id="hintLang">Tilni ro‘yxatdan tanlang.</div>
               </div>
 
               <div class="hr"></div>
@@ -258,7 +181,7 @@ const r = await fetch("/api/ticket/served", {
               <!-- REGION -->
               <div>
                 <div class="row">
-                  <div class="label"><span class="icon">📍</span><span id="lblRegion">Viloyat</span></div>
+                  <div class="label"><span>📍</span><span id="lblRegion">Viloyat</span></div>
                   <span class="badge" id="bRegion">Next</span>
                 </div>
                 <select id="regionSel" class="select" disabled>
@@ -270,35 +193,36 @@ const r = await fetch("/api/ticket/served", {
               <!-- UNIT -->
               <div>
                 <div class="row">
-                  <div class="label"><span class="icon">🏙</span><span id="lblUnit">Tuman/Shahar</span></div>
+                  <div class="label"><span>🏙</span><span id="lblUnit">Tuman/Shahar</span></div>
                   <span class="badge" id="bUnit">Next</span>
                 </div>
                 <select id="unitSel" class="select" disabled>
                   <option value="">—</option>
                 </select>
-                <div class="hint" id="hintUnit">Viloyatni tanlasangiz, shu viloyatga tegishli tuman/shaharlar chiqadi.</div>
+                <div class="hint" id="hintUnit">Viloyatni tanlasangiz, tuman/shaharlar chiqadi.</div>
               </div>
 
               <!-- ORG -->
               <div>
                 <div class="row">
-                  <div class="label"><span class="icon">🏛</span><span id="lblOrg">Muassasa</span></div>
+                  <div class="label"><span>🏛</span><span id="lblOrg">Muassasa</span></div>
                   <span class="badge" id="bOrg">Next</span>
                 </div>
                 <select id="orgSel" class="select" disabled>
                   <option value="">—</option>
                 </select>
-                <div class="hint" id="hintOrg">Hozircha test uchun faqat Chinoz tumani (Toshkent viloyati) muassasalari bor.</div>
+                <div class="hint" id="hintOrg">Hozircha test uchun Chinoz tumani muassasalari bor.</div>
               </div>
-<!-- FULL NAME -->
-<div style="margin-top:12px;">
-  <div class="row">
-    <div class="label"><span class="icon">👤</span><span id="lblFullName">Ism familiya</span></div>
-    <span class="badge" id="bName">Required</span>
-  </div>
-  <input id="fullNameInp" class="select" placeholder="Masalan: Ali Valiyev" />
-  <div class="hint" id="hintName">Navbat olishdan oldin ism familiyangizni kiriting.</div>
-</div>
+
+              <!-- FULL NAME -->
+              <div style="margin-top:12px;">
+                <div class="row">
+                  <div class="label"><span>👤</span><span id="lblFullName">Ism familiya</span></div>
+                  <span class="badge" id="bName">Required</span>
+                </div>
+                <input id="fullNameInp" class="select" placeholder="Masalan: Ali Valiyev" />
+                <div class="hint" id="hintName">Navbat olishdan oldin ism familiyangizni kiriting.</div>
+              </div>
 
               <button id="saveBtn" class="btn" disabled>✅ Tanlovni saqlash</button>
               <div id="toast" class="toast hidden"></div>
@@ -308,7 +232,7 @@ const r = await fetch("/api/ticket/served", {
               <!-- TICKET -->
               <div class="ticketBox">
                 <div class="row" style="margin-bottom:8px;">
-                  <div class="label"><span class="icon">🎫</span><span id="lblTicket">Navbat</span></div>
+                  <div class="label"><span>🎫</span><span id="lblTicket">Navbat</span></div>
                   <span class="badge" id="ticketState">—</span>
                 </div>
 
@@ -328,36 +252,23 @@ const r = await fetch("/api/ticket/served", {
                   </div>
 
                   <div class="kpiGrid">
-                    <div class="kpi">
-                      <div class="k">Oldinda</div>
-                      <div class="v" id="aheadKpi">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="k">Keyinda</div>
-                      <div class="v" id="behindKpi">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="k">O‘rtacha (3–4)</div>
-                      <div class="v" id="avgKpi">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="k">Holat</div>
-                      <div class="v" id="statusKpi">—</div>
-                    </div>
+                    <div class="kpi"><div class="k">Oldinda</div><div class="v" id="aheadKpi">—</div></div>
+                    <div class="kpi"><div class="k">Keyinda</div><div class="v" id="behindKpi">—</div></div>
+                    <div class="kpi"><div class="k">O‘rtacha</div><div class="v" id="avgKpi">—</div></div>
+                    <div class="kpi"><div class="k">Holat</div><div class="v" id="statusKpi">—</div></div>
                   </div>
 
                   <div id="warnBox" class="warn hidden"></div>
 
                   <div class="subActions">
-  <button id="refreshBtn" class="btn2">🔄 Yangilash</button>
-  <button id="cancelBtn" class="btn2">🗑 Bekor</button>
-  <button id="servedBtn" class="btn2">✅ Xizmat ko‘rsatildi</button>
-</div>
-
+                    <button id="refreshBtn" class="btn2">🔄 Yangilash</button>
+                    <button id="cancelBtn" class="btn2">🗑 Bekor</button>
+                    <button id="servedBtn" class="btn2">✅ Xizmat ko‘rsatildi</button>
+                    <button id="openTicketBtn" class="btn2">🧾 Chek (ticket)</button>
+                  </div>
                 </div>
               </div>
               <!-- /TICKET -->
-
             </div>
           </div>
         </div>
@@ -370,959 +281,680 @@ const r = await fetch("/api/ticket/served", {
             <h3 id="howTitle">⚡ Qanday ishlaydi?</h3>
             <p id="howText">Til → Viloyat → Tuman/Shahar → Muassasa</p>
           </div>
-
           <div class="mini">
             <h3>🔔 Bildirishnoma</h3>
-            <p id="notifText">Navbatingiz 10 ta qolganda va bekor bo‘lsa avtomatik xabar beradi (browser permission kerak).</p>
+            <p id="notifText">Navbatingiz 10 ta qolganda avtomatik xabar beradi (browser permission kerak).</p>
           </div>
-
           <div class="mini">
             <h3>📲 Telegram bot</h3>
-            <p id="botText">Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).</p>
+            <p id="botText">Telegram bot orqali ham navbat olishingiz mumkin.</p>
           </div>
-
           <div class="footer">© NAVBATUZ • Render + PostgreSQL • Web + Telegram</div>
         </div>
       </div>
     </div>
   </div>
 
-  <script>
-    const API_BASE = window.location.origin;
+<script>
+  const API_BASE = window.location.origin;
+  const $ = (id) => document.getElementById(id);
 
-    const UI = {
-      uz: {
-        heroTitle: "Navbatni tez va oson oling.",
-        heroSub: "Tilni tanlang, keyin viloyat → tuman/shahar → muassasani ro‘yxatdan (scroll/select) tanlang.",
-        lblLang: "Til",
-        lblRegion: "Viloyat",
-        lblUnit: "Tuman/Shahar",
-        lblOrg: "Muassasa",
-        hintLang: "Tilni ro‘yxatdan tanlang (yozib kiritish yo‘q).",
-        hintRegion: "Avval tilni tanlang, keyin viloyat ro‘yxati chiqadi.",
-        hintUnit: "Viloyatni tanlasangiz, shu viloyatga tegishli tuman/shaharlar chiqadi.",
-        hintOrg: "Hozircha test uchun faqat Chinoz tumani (Toshkent viloyati) muassasalari bor.",
-        save: "✅ Tanlovni saqlash",
-        howTitle: "⚡ Qanday ishlaydi?",
-        howText: "Til → Viloyat → Tuman/Shahar → Muassasa",
-        bot: "Telegram bot orqali ham navbat olishingiz mumkin (tezkor va qulay).",
-        saved: "✅ Saqlandi!",
-        notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q.",
-        lblFullName: "Ism familiya",
-hintName: "Navbat olishdan oldin ism familiyangizni kiriting.",
-needName: "Ism familiya kiriting.",
-servedBtn: "✅ Xizmat ko‘rsatildi",
-servedOk: "✅ Served qilindi (o‘rtacha vaqt hisoblanadi).",
+  const UI = {
+    uz: {
+      heroTitle: "Navbatni tez va oson oling.",
+      heroSub: "Tilni tanlang, keyin viloyat → tuman/shahar → muassasani tanlang.",
+      hintLang: "Tilni ro‘yxatdan tanlang.",
+      hintRegion: "Avval tilni tanlang, keyin viloyat ro‘yxati chiqadi.",
+      hintUnit: "Viloyatni tanlasangiz, tuman/shaharlar chiqadi.",
+      hintOrg: "Hozircha test uchun Chinoz tumani muassasalari bor.",
+      hintName: "Navbat olishdan oldin ism familiyangizni kiriting.",
+      needName: "Ism familiya kiriting.",
+      saved: "✅ Saqlandi!",
+      taken: "✅ Navbat olindi!",
+      cancelled: "🗑 Navbat bekor qilindi.",
+      servedOk: "✅ Served qilindi (o‘rtacha vaqt hisoblanadi).",
+      apiFail: "Server bilan aloqa yo‘q. Keyinroq urinib ko‘ring.",
+      online: "Online • Ready",
+      offline: "Offline • Aloqa yo‘q",
+      notFoundOrg: "Hozircha bu tuman/shahar uchun muassasa yo‘q.",
+      served: "🎉 Navbatingiz keldi!",
+      missed: "⚠️ Navbatingiz o‘tib ketgan. 5 ta ichida saqlanadi.",
+      autoCancelled: "⛔ 5 tadan o‘tib ketdi. Avtomat bekor qilindi.",
+    },
+    ru: {
+      heroTitle: "Получите очередь быстро и удобно.",
+      heroSub: "Выберите язык, затем область → район/город → учреждение.",
+      hintLang: "Выберите язык из списка.",
+      hintRegion: "Сначала выберите язык — затем появятся области.",
+      hintUnit: "После выбора области появятся районы/города.",
+      hintOrg: "Пока тест: Чиназский район.",
+      hintName: "Перед получением талона введите имя и фамилию.",
+      needName: "Введите имя и фамилию.",
+      saved: "✅ Сохранено!",
+      taken: "✅ Талон получен!",
+      cancelled: "🗑 Талон отменён.",
+      servedOk: "✅ Отмечено как обслужено.",
+      apiFail: "Нет связи с сервером. Попробуйте позже.",
+      online: "Online • Ready",
+      offline: "Offline • Нет связи",
+      notFoundOrg: "Пока нет учреждений.",
+      served: "🎉 Ваша очередь подошла!",
+      missed: "⚠️ Вы пропустили. Держим в пределах 5.",
+      autoCancelled: "⛔ Прошло +5. Авто-отмена.",
+    },
+    en: {
+      heroTitle: "Get your queue fast and easily.",
+      heroSub: "Pick language, then region → district/city → organization.",
+      hintLang: "Select language.",
+      hintRegion: "Choose language first, then regions appear.",
+      hintUnit: "After selecting region, units appear.",
+      hintOrg: "Test only for now.",
+      hintName: "Enter your full name before taking a ticket.",
+      needName: "Enter full name.",
+      saved: "✅ Saved!",
+      taken: "✅ Ticket taken!",
+      cancelled: "🗑 Ticket cancelled.",
+      servedOk: "✅ Marked as served.",
+      apiFail: "Cannot reach server. Try later.",
+      online: "Online • Ready",
+      offline: "Offline • No connection",
+      notFoundOrg: "No orgs for this unit.",
+      served: "🎉 It’s your turn!",
+      missed: "⚠️ Missed. Grace within next 5.",
+      autoCancelled: "⛔ Passed +5. Auto-cancelled.",
+    }
+  };
 
-        take: "🎟 Navbat olish",
-        ticket: "Navbat",
-        online: "Online • Ready",
-        offline: "Offline • Aloqa yo‘q",
-        taken: "✅ Navbat olindi!",
-        cancelled: "🗑 Navbat bekor qilindi.",
-        served: "🎉 Navbatingiz keldi!",
-        missed: "⚠️ Navbatingiz o‘tib ketgan. 5 ta keyingi navbat ichida saqlanadi.",
-        autoCancelled: "⛔ 5 tadan o‘tib ketdi. Navbat avtomat bekor qilindi.",
-        apiFail: "Server bilan aloqa yo‘q. Keyinroq urinib ko‘ring.",
-        notif10: "🔔 Navbatingizga 10 ta qoldi!",
-        notifCancelled: "⛔ Navbatingiz bekor qilindi.",
-        notifNow: "✅ Navbatingiz keldi!"
-      },
-      ru: {
-        heroTitle: "Получите очередь быстро и удобно.",
-        heroSub: "Сначала выберите язык, затем область → район/город → учреждение (всё через список/scroll).",
-        lblLang: "Язык",
-        lblRegion: "Область",
-        lblUnit: "Район/Город",
-        lblOrg: "Учреждение",
-        hintLang: "Выберите язык из списка (без ввода).",
-        hintRegion: "Сначала выберите язык — затем появится список областей.",
-        hintUnit: "После выбора области появятся районы/города этой области.",
-        hintOrg: "Пока тест: учреждения есть только для Чиназского района (Ташкентская область).",
-        save: "✅ Сохранить выбор",
-        howTitle: "⚡ Как это работает?",
-        howText: "Язык → Область → Район/Город → Учреждение",
-        bot: "Можно взять очередь и через Telegram-бот (быстро и удобно).",
-        saved: "✅ Сохранено!",
-        notFoundOrg: "Пока нет учреждений для выбранного района/города.",
-        lblFullName: "Имя Фамилия",
-hintName: "Перед тем как взять очередь, введите имя и фамилию.",
-needName: "Введите имя и фамилию.",
-servedBtn: "✅ Обслужено",
-servedOk: "✅ Отмечено как обслужено (среднее время обновится).",
+  function getT(lang){ return UI[lang] || UI.uz; }
 
-        take: "🎟 Взять очередь",
-        ticket: "Очередь",
-        online: "Online • Ready",
-        offline: "Offline • Нет связи",
-        taken: "✅ Очередь получена!",
-        cancelled: "🗑 Очередь отменена.",
-        served: "🎉 Ваша очередь подошла!",
-        missed: "⚠️ Вы пропустили очередь. Держим ещё в пределах 5 следующих.",
-        autoCancelled: "⛔ Превышено +5. Очередь автоматически отменена.",
-        apiFail: "Нет связи с сервером. Попробуйте позже.",
-        notif10: "🔔 До вашей очереди осталось 10!",
-        notifCancelled: "⛔ Ваша очередь отменена.",
-        notifNow: "✅ Ваша очередь подошла!"
-      },
-      en: {
-        heroTitle: "Get your queue fast and easily.",
-        heroSub: "Pick language first, then choose region → district/city → organization (all via scroll/select).",
-        lblLang: "Language",
-        lblRegion: "Region",
-        lblUnit: "District/City",
-        lblOrg: "Organization",
-        hintLang: "Select language from the list (no typing).",
-        hintRegion: "Choose language first, then regions will appear.",
-        hintUnit: "After selecting a region, its districts/cities will appear.",
-        hintOrg: "Test only: organizations exist only for Chinaz district (Tashkent region) for now.",
-        save: "✅ Save selection",
-        howTitle: "⚡ How it works?",
-        howText: "Language → Region → District/City → Organization",
-        bot: "You can also take a ticket via Telegram bot (fast and convenient).",
-        saved: "✅ Saved!",
-        notFoundOrg: "No organizations for this district/city yet.",
-        lblFullName: "Full name",
-hintName: "Enter your full name before taking a ticket.",
-needName: "Enter full name.",
-servedBtn: "✅ Served",
-servedOk: "✅ Marked served (average time will improve).",
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.remove("hidden");
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>t.classList.add("hidden"), 2200);
+  }
 
-        take: "🎟 Take a ticket",
-        ticket: "Queue",
-        online: "Online • Ready",
-        offline: "Offline • No connection",
-        taken: "✅ Ticket taken!",
-        cancelled: "🗑 Ticket cancelled.",
-        served: "🎉 It’s your turn!",
-        missed: "⚠️ You missed your turn. Keeping within next 5 numbers.",
-        autoCancelled: "⛔ Passed +5. Ticket auto-cancelled.",
-        apiFail: "Cannot reach server. Try again later.",
-        notif10: "🔔 Only 10 left before your turn!",
-        notifCancelled: "⛔ Your ticket was cancelled.",
-        notifNow: "✅ It’s your turn!"
-      }
+  function setOnlineBadge(isOnline){
+    const t = getT(state.lang);
+    $("statusText").textContent = isOnline ? t.online : t.offline;
+  }
+
+  function setOptions(sel, items, placeholder="—") {
+    sel.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = placeholder;
+    sel.appendChild(opt0);
+    for (const it of items) {
+      const o = document.createElement("option");
+      o.value = it.value;
+      o.textContent = it.label;
+      sel.appendChild(o);
+    }
+  }
+
+  function labelByLang(obj, lang){
+    if (lang === "ru") return obj.name_ru || obj.name_uz;
+    if (lang === "en") return obj.name_uz || obj.name_ru;
+    return obj.name_uz || obj.name_ru;
+  }
+
+  function fmtCountdown(ms){
+    if (!Number.isFinite(ms) || ms <= 0) return "00:00:00";
+    let s = Math.floor(ms / 1000);
+    const hrs = Math.floor(s / 3600); s -= hrs*3600;
+    const mins = Math.floor(s / 60); s -= mins*60;
+    const pad = (n)=> String(n).padStart(2,"0");
+    return `${pad(hrs)}:${pad(mins)}:${pad(s)}`;
+  }
+
+  async function apiGet(path){
+    const r = await fetch(API_BASE + path, { cache:"no-store" });
+    if (!r.ok) throw new Error("API GET fail " + path);
+    return await r.json();
+  }
+  async function apiPost(path, body){
+    const r = await fetch(API_BASE + path, {
+      method:"POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(body),
+      cache:"no-store"
+    });
+    const j = await r.json().catch(()=>null);
+    if (!r.ok) throw new Error(j?.error || ("API POST fail " + path));
+    return j;
+  }
+
+  async function fetchJsonSmart(url){
+    const tries = [];
+    if (url) tries.push(url);
+    if (url && url.includes("/master/")) tries.push(url.replace("/master/","/main/"));
+    if (url && url.includes("/main/")) tries.push(url.replace("/main/","/master/"));
+    if (url && url.includes("/JSON/")) tries.push(url.replace("/JSON/","/json/"));
+    if (url && url.includes("/json/")) tries.push(url.replace("/json/","/JSON/"));
+    const uniq = [...new Set(tries)].filter(Boolean);
+
+    let lastErr = null;
+    for (const u of uniq){
+      try{
+        const res = await fetch(u, { cache:"no-store" });
+        if (!res.ok) { lastErr = new Error(`Fetch ${u} -> ${res.status}`); continue; }
+        return await res.json();
+      }catch(e){ lastErr = e; }
+    }
+    throw lastErr || new Error("fetchJsonSmart failed");
+  }
+
+  // ===== Data state =====
+  let CFG = null;
+  let regions = [];
+  let unitsByRegionId = new Map();
+  let orgsByUzKey = {};
+
+  const state = {
+    lang: localStorage.getItem("lang") || "uz",
+    regionId: localStorage.getItem("regionId") || "",
+    unitId: localStorage.getItem("unitId") || "",
+    orgId: localStorage.getItem("orgId") || "",
+    fullName: localStorage.getItem("fullName") || ""
+  };
+
+  // ===== Ticket state =====
+  const TICKET_KEY = "navbatuz_ticket";
+  let ticket = null;
+
+  let pollTimer = null;
+  let countdownTimer = null;
+  let etaEndTs = null;
+
+  function loadTicket(){
+    try{
+      const raw = localStorage.getItem(TICKET_KEY);
+      ticket = raw ? JSON.parse(raw) : null;
+    }catch{ ticket = null; }
+  }
+  function saveTicket(){
+    if (!ticket) localStorage.removeItem(TICKET_KEY);
+    else localStorage.setItem(TICKET_KEY, JSON.stringify(ticket));
+  }
+
+  function toUnit(obj, kind){
+    const id = obj.id ?? obj.soato_id ?? obj.code ?? (obj.name_uz || obj.name_ru || Math.random().toString(16).slice(2));
+    return {
+      id: String(id),
+      region_id: String(obj.region_id ?? obj.regionId ?? obj.parent_id ?? obj.parentId ?? ""),
+      kind,
+      name_uz: obj.name_uz ?? obj.nameUz ?? obj.name ?? "",
+      name_ru: obj.name_ru ?? obj.nameRu ?? "",
     };
+  }
+  function toRegion(obj){
+    return {
+      id: String(obj.id ?? obj.soato_id ?? obj.code),
+      name_uz: obj.name_uz ?? obj.nameUz ?? obj.name ?? "",
+      name_ru: obj.name_ru ?? obj.nameRu ?? "",
+    };
+  }
 
-    const $ = (id) => document.getElementById(id);
-    const normKey = (s) => (s || "").toString().trim();
+  async function loadAllData(){
+    CFG = await apiGet("/api/geo");
+    orgsByUzKey = CFG.orgsByUnitUzKey || {};
 
-    function setOptions(sel, items, placeholder="—") {
-      sel.innerHTML = "";
-      const opt0 = document.createElement("option");
-      opt0.value = "";
-      opt0.textContent = placeholder;
-      sel.appendChild(opt0);
-      for (const it of items) {
-        const o = document.createElement("option");
-        o.value = it.value;
-        o.textContent = it.label;
-        sel.appendChild(o);
-      }
+    const regionsRaw = await fetchJsonSmart(CFG.sources?.regions);
+    regions = (Array.isArray(regionsRaw) ? regionsRaw : []).map(toRegion);
+
+    const districtsRaw = await fetchJsonSmart(CFG.sources?.districts);
+    const districts = (Array.isArray(districtsRaw) ? districtsRaw : []).map(x => toUnit(x, "district"));
+
+    let cities = [];
+    try {
+      const citiesRaw = await fetchJsonSmart(CFG.sources?.cities);
+      cities = (Array.isArray(citiesRaw) ? citiesRaw : []).map(x => toUnit(x, "city"));
+    } catch { cities = []; }
+
+    unitsByRegionId = new Map();
+    for (const u of [...districts, ...cities]) {
+      if (!u.region_id) continue;
+      if (!unitsByRegionId.has(u.region_id)) unitsByRegionId.set(u.region_id, []);
+      unitsByRegionId.get(u.region_id).push(u);
+    }
+    for (const [rid, arr] of unitsByRegionId.entries()) {
+      arr.sort((a,b)=> (a.name_uz || "").localeCompare(b.name_uz || ""));
+    }
+    regions.sort((a,b)=> (a.name_uz || "").localeCompare(b.name_uz || ""));
+  }
+
+  function applyLang(lang){
+    const t = getT(lang);
+    $("heroTitle").textContent = t.heroTitle;
+    $("heroSub").textContent = t.heroSub;
+    $("hintLang").textContent = t.hintLang;
+    $("hintRegion").textContent = t.hintRegion;
+    $("hintUnit").textContent = t.hintUnit;
+    $("hintOrg").textContent = t.hintOrg;
+    $("hintName").textContent = t.hintName;
+  }
+
+  function rebuildRegions(){
+    const lang = state.lang;
+    const items = regions.map(r => ({ value: r.id, label: labelByLang(r, lang) }));
+    setOptions($("regionSel"), items, "—");
+    $("regionSel").disabled = false;
+    if (state.regionId) $("regionSel").value = state.regionId;
+  }
+
+  function rebuildUnits(){
+    const lang = state.lang;
+    const rid = state.regionId;
+    const sel = $("unitSel");
+
+    state.unitId = "";
+    state.orgId = "";
+    localStorage.setItem("unitId", "");
+    localStorage.setItem("orgId", "");
+
+    $("orgSel").disabled = true;
+    setOptions($("orgSel"), [], "—");
+
+    if (!rid) {
+      sel.disabled = true;
+      setOptions(sel, [], "—");
+      return;
     }
 
-    function toast(msg){
-      const t = $("toast");
-      t.textContent = msg;
-      t.classList.remove("hidden");
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(()=>t.classList.add("hidden"), 2200);
-    }
+    const units = unitsByRegionId.get(String(rid)) || [];
+    const items = units.map(u => {
+      const base = labelByLang(u, lang);
+      const prefix = (u.kind === "city")
+        ? (lang==="uz" ? "Shahar: " : lang==="ru" ? "Город: " : "City: ")
+        : (lang==="uz" ? "Tuman: " : lang==="ru" ? "Район: " : "District: ");
+      return { value: u.id, label: prefix + base };
+    });
 
-    function fmtTimeFromMinutes(mins){
-      if (!isFinite(mins) || mins < 0) return "—";
-      const m = Math.round(mins);
-      if (m < 60) return `${m} min`;
-      const h = Math.floor(m/60);
-      const mm = m % 60;
-      return `${h} h ${mm} min`;
-    }
+    setOptions(sel, items, "—");
+    sel.disabled = false;
+  }
 
-    function fmtCountdown(ms){
-      if (!Number.isFinite(ms) || ms <= 0) return "00:00:00";
-      let s = Math.floor(ms / 1000);
-      const days = Math.floor(s / 86400); s -= days*86400;
-      const hrs = Math.floor(s / 3600); s -= hrs*3600;
-      const mins = Math.floor(s / 60); s -= mins*60;
-      const pad = (n)=> String(n).padStart(2,"0");
-      if (days > 0) return `${days}d ${pad(hrs)}:${pad(mins)}:${pad(s)}`;
-      return `${pad(hrs)}:${pad(mins)}:${pad(s)}`;
-    }
+  function rebuildOrgs(){
+    const lang = state.lang;
+    const rid = state.regionId;
+    const uid = state.unitId;
 
-    // ===== Notifications =====
-    function getT(lang){ return UI[lang] || UI.uz; }
-
-    async function ensureNotifPermission(){
-      if (!("Notification" in window)) return false;
-      if (Notification.permission === "granted") return true;
-      if (Notification.permission === "denied") return false;
-      try{
-        const p = await Notification.requestPermission();
-        return p === "granted";
-      }catch(e){ return false; }
-    }
-
-    function pushNotif(title, body, tag){
-      const t = getT(state.lang);
-      if (!("Notification" in window)) {
-        toast(body || title);
-        return;
-      }
-      if (Notification.permission !== "granted") {
-        toast(body || title);
-        return;
-      }
-      try{
-        new Notification(title, { body, tag });
-      }catch(e){
-        toast(body || title);
-      }
-    }
-
-    // ===== State/data =====
-    let CFG = null;
-    let regions = [];
-    let unitsByRegionId = new Map();
-    let orgsByUzKey = {};
-
-    const state = {
-  lang: localStorage.getItem("lang") || "uz",
-  regionId: localStorage.getItem("regionId") || "",
-  unitId: localStorage.getItem("unitId") || "",
-  orgId: localStorage.getItem("orgId") || "",
-  fullName: localStorage.getItem("fullName") || ""
-};
-
-
-    // ===== Ticket state =====
-    const TICKET_KEY = "navbatuz_ticket";
-    const AVG_KEY_PREFIX = "navbatuz_avg_";
-    let ticket = null;
-
-    // countdown internals
-    let pollTimer = null;
-    let countdownTimer = null;
-    let etaEndTs = null; // Date.now()+etaMs
-    let lastAhead = null;
-    let notified10 = false;
-    let notifiedNow = false;
-    let notifiedCancelled = false;
-
-    function loadTicket(){
-      try{
-        const raw = localStorage.getItem(TICKET_KEY);
-        ticket = raw ? JSON.parse(raw) : null;
-      }catch(e){ ticket = null; }
-    }
-    function saveTicket(){
-      if (!ticket) localStorage.removeItem(TICKET_KEY);
-      else localStorage.setItem(TICKET_KEY, JSON.stringify(ticket));
-    }
-
-    function setOnlineBadge(isOnline){
-      const t = getT(state.lang);
-      $("statusText").textContent = isOnline ? t.online : t.offline;
-    }
-
-    // ===== API =====
-    async function apiGet(path){
-      const r = await fetch(API_BASE + path, { cache:"no-store" });
-      if (!r.ok) throw new Error("API GET fail " + path);
-      return await r.json();
-    }
-    async function apiPost(path, body){
-      const r = await fetch(API_BASE + path, {
-        method:"POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify(body),
-        cache:"no-store"
-      });
-      if (!r.ok) throw new Error("API POST fail " + path);
-      return await r.json();
-    }
-
-    // ===== fetch JSON with fallback (fix 404 master/main) =====
-    async function fetchJsonSmart(url){
-      const tries = [];
-      if (url) tries.push(url);
-
-      // master -> main
-      if (url && url.includes("/master/")) tries.push(url.replace("/master/","/main/"));
-      if (url && url.includes("/main/")) tries.push(url.replace("/main/","/master/"));
-
-      // JSON -> json (case)
-      if (url && url.includes("/JSON/")) tries.push(url.replace("/JSON/","/json/"));
-      if (url && url.includes("/json/")) tries.push(url.replace("/json/","/JSON/"));
-
-      // remove double slashes
-      const uniq = [...new Set(tries)].filter(Boolean);
-
-      let lastErr = null;
-      for (const u of uniq){
-        try{
-          const res = await fetch(u, { cache:"no-store" });
-          if (!res.ok) { lastErr = new Error(`Fetch ${u} -> ${res.status}`); continue; }
-          return await res.json();
-        }catch(e){ lastErr = e; }
-      }
-      throw lastErr || new Error("fetchJsonSmart failed");
-    }
-
-    // ===== Rolling avg learning (client side fallback) =====
-    function loadAvgState(orgId){
-      try{
-        const raw = localStorage.getItem(AVG_KEY_PREFIX + orgId);
-        return raw ? JSON.parse(raw) : { lastNowServing: null, lastTs: null, samples: [] };
-      }catch(e){
-        return { lastNowServing: null, lastTs: null, samples: [] };
-      }
-    }
-    function saveAvgState(orgId, obj){
-      localStorage.setItem(AVG_KEY_PREFIX + orgId, JSON.stringify(obj));
-    }
-    function updateLearnedAvg(orgId, nowServing){
-      const s = loadAvgState(orgId);
-      const ts = Date.now();
-      if (typeof nowServing === "number" && isFinite(nowServing)) {
-        if (s.lastNowServing !== null && nowServing > s.lastNowServing && s.lastTs) {
-          const diff = ts - s.lastTs;
-          const steps = nowServing - s.lastNowServing;
-          const per = diff / steps;
-          const sec = Math.round(per/1000);
-          s.samples.push(sec);
-          s.samples = s.samples.slice(-4);
-        }
-        s.lastNowServing = nowServing;
-        s.lastTs = ts;
-        saveAvgState(orgId, s);
-      }
-      const arr = (s.samples || []).slice(-4);
-      if (!arr.length) return null;
-      return Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
-    }
-    function getLearnedAvg(orgId){
-      const s = loadAvgState(orgId);
-      const arr = (s.samples || []).slice(-4);
-      if (!arr.length) return null;
-      return Math.round(arr.reduce((a,b)=>a+b,0) / arr.length);
-    }
-
-    // ===== Data helpers =====
-    function toUnit(obj, kind){
-      const id = obj.id ?? obj.soato_id ?? obj.soatoId ?? obj.code ?? (obj.name_uz || obj.name_ru || Math.random().toString(16).slice(2));
-      return {
-        id: String(id),
-        region_id: String(obj.region_id ?? obj.regionId ?? obj.parent_id ?? obj.parentId ?? obj.region ?? ""),
-        kind,
-        name_uz: obj.name_uz ?? obj.nameUz ?? obj.name ?? "",
-        name_ru: obj.name_ru ?? obj.nameRu ?? "",
-        name_oz: obj.name_oz ?? obj.nameOz ?? ""
-      };
-    }
-    function toRegion(obj){
-      return {
-        id: String(obj.id ?? obj.soato_id ?? obj.soatoId ?? obj.code),
-        name_uz: obj.name_uz ?? obj.nameUz ?? obj.name ?? "",
-        name_ru: obj.name_ru ?? obj.nameRu ?? "",
-        name_oz: obj.name_oz ?? obj.nameOz ?? ""
-      };
-    }
-    function labelByLang(obj, lang){
-      if (lang === "ru") return obj.name_ru || obj.name_uz;
-      if (lang === "en") return obj.name_uz || obj.name_ru;
-      return obj.name_uz || obj.name_ru;
-    }
-
-    async function loadAllData(){
-      CFG = await apiGet("/api/geo");
-      orgsByUzKey = CFG.orgsByUnitUzKey || {};
-
-      const regionsRaw = await fetchJsonSmart(CFG.sources?.regions);
-      regions = (Array.isArray(regionsRaw) ? regionsRaw : []).map(toRegion);
-
-      const districtsRaw = await fetchJsonSmart(CFG.sources?.districts);
-      const districts = (Array.isArray(districtsRaw) ? districtsRaw : []).map(x => toUnit(x, "district"));
-
-      let cities = [];
-      try {
-        const citiesRaw = await fetchJsonSmart(CFG.sources?.cities);
-        cities = (Array.isArray(citiesRaw) ? citiesRaw : []).map(x => toUnit(x, "city"));
-      } catch(e) {
-        cities = [];
-      }
-
-      unitsByRegionId = new Map();
-      for (const u of [...districts, ...cities]) {
-        if (!u.region_id) continue;
-        if (!unitsByRegionId.has(u.region_id)) unitsByRegionId.set(u.region_id, []);
-        unitsByRegionId.get(u.region_id).push(u);
-      }
-      for (const [rid, arr] of unitsByRegionId.entries()) {
-        arr.sort((a,b)=> (a.name_uz || "").localeCompare(b.name_uz || ""));
-      }
-      regions.sort((a,b)=> (a.name_uz || "").localeCompare(b.name_uz || ""));
-    }
-
-    // ===== UI apply =====
-    function applyLang(lang){
-      const t = UI[lang] || UI.uz;
-
-      $("heroTitle").textContent = t.heroTitle;
-      $("heroSub").textContent = t.heroSub;
-
-      $("lblLang").textContent = t.lblLang;
-      $("lblRegion").textContent = t.lblRegion;
-      $("lblUnit").textContent = t.lblUnit;
-      $("lblOrg").textContent = t.lblOrg;
-
-      $("hintLang").textContent = t.hintLang;
-      $("hintRegion").textContent = t.hintRegion;
-      $("hintUnit").textContent = t.hintUnit;
-      $("hintOrg").textContent = t.hintOrg;
-
-      $("saveBtn").textContent = t.save;
-      $("howTitle").textContent = t.howTitle;
-      $("howText").textContent = t.howText;
-      $("botText").textContent = t.bot;
-
-      $("lblTicket").textContent = t.ticket;
-      $("takeBtn").textContent = t.take;
-      $("lblFullName").textContent = t.lblFullName;
-$("hintName").textContent = t.hintName;
-
-    }
-
-    function rebuildRegions(){
-      const lang = state.lang;
-      const items = regions.map(r => ({ value: r.id, label: labelByLang(r, lang) }));
-      setOptions($("regionSel"), items, "—");
-      $("regionSel").disabled = false;
-      if (state.regionId) $("regionSel").value = state.regionId;
-    }
-
-    function rebuildUnits(){
-      const lang = state.lang;
-      const rid = state.regionId;
-      const sel = $("unitSel");
-
-      state.unitId = "";
-      state.orgId = "";
+    if (!rid || !uid) {
       $("orgSel").disabled = true;
       setOptions($("orgSel"), [], "—");
+      return;
+    }
 
-      if (!rid) {
-        sel.disabled = true;
-        setOptions(sel, [], "—");
-        return;
+    const region = regions.find(r => String(r.id) === String(rid));
+    const units = unitsByRegionId.get(String(rid)) || [];
+    const unit = units.find(u => String(u.id) === String(uid));
+
+    if (!region || !unit) {
+      $("orgSel").disabled = true;
+      setOptions($("orgSel"), [], "—");
+      return;
+    }
+
+    const uzKey = (region.name_uz || "").trim() + "|" + (unit.name_uz || "").trim();
+    const orgs = orgsByUzKey[uzKey] || [];
+
+    if (!orgs.length) {
+      $("orgSel").disabled = true;
+      setOptions($("orgSel"), [], "—");
+      toast(getT(lang).notFoundOrg);
+      return;
+    }
+
+    const items = orgs.map(o => ({
+      value: o.id,
+      label: (o.name && o.name[lang]) ? o.name[lang] : (o.name?.uz || o.id)
+    }));
+
+    setOptions($("orgSel"), items, "—");
+    $("orgSel").disabled = false;
+    if (state.orgId) $("orgSel").value = state.orgId;
+  }
+
+  function setTicketUIVisible(on){ $("ticketInfo").classList.toggle("hidden", !on); }
+  function setWarn(msg){
+    const w = $("warnBox");
+    if (!msg) { w.classList.add("hidden"); w.textContent=""; return; }
+    w.textContent = msg;
+    w.classList.remove("hidden");
+  }
+  function setTicketStateBadge(txt){ $("ticketState").textContent = txt || "—"; }
+
+  function updateSaveBtn(){
+    const okSelect = !!(state.lang && state.regionId && state.unitId && state.orgId);
+    const okName = !!(state.fullName && state.fullName.length >= 3);
+
+    $("saveBtn").disabled = !(okSelect && okName);
+
+    const hasActive = (ticket && ticket.status === "active");
+    $("takeBtn").disabled = !(okSelect && okName) || hasActive;
+  }
+
+  function computeAheadBehind(nowServing, lastNumber, myNumber){
+    if (![nowServing,lastNumber,myNumber].every(x=>Number.isFinite(x))) return { ahead:null, behind:null };
+    return {
+      ahead: Math.max(0, myNumber - nowServing),
+      behind: Math.max(0, lastNumber - myNumber),
+    };
+  }
+
+  function stopCountdown(){
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  function startCountdown(){
+    stopCountdown();
+    countdownTimer = setInterval(()=>{
+      if (!etaEndTs) { $("countdownText").textContent = "Countdown: —"; return; }
+      const left = etaEndTs - Date.now();
+      $("countdownText").textContent = "Countdown: " + (left <= 0 ? "00:00:00" : fmtCountdown(left));
+    }, 1000);
+  }
+
+  function renderTicketStatus(data){
+    const t = getT(state.lang);
+
+    if (!ticket || !ticket.number) {
+      setTicketUIVisible(false);
+      setTicketStateBadge("—");
+      $("etaText").textContent = "ETA: —";
+      $("countdownText").textContent = "Countdown: —";
+      stopCountdown();
+      return;
+    }
+
+    const my = Number(ticket.number);
+    const nowServing = Number.isFinite(data?.nowServing) ? data.nowServing : null;
+    const avgSec = Number.isFinite(data?.avgServiceSec) && data.avgServiceSec > 0 ? Math.round(data.avgServiceSec) : null;
+
+    const lastNumber = Number.isFinite(data?.lastNumber) ? data.lastNumber : my;
+    const { ahead, behind } = computeAheadBehind(nowServing, lastNumber, my);
+
+    const serverStatus = data?.ticket?.status || null;
+
+    let uiStatus = "Waiting";
+    let badge = "Waiting";
+    setWarn(null);
+
+    $("nowServingBadge").textContent = Number.isFinite(nowServing) ? ("Now: " + nowServing) : "Now: —";
+
+    if (serverStatus === "cancelled") {
+      uiStatus = "Auto-cancelled"; badge = "CANCELLED";
+      setWarn(t.autoCancelled);
+      ticket.status = "cancelled"; saveTicket();
+      stopPolling(); updateSaveBtn();
+    } else if (serverStatus === "served") {
+      uiStatus = t.served; badge = "NOW";
+      setWarn(t.served);
+    } else if (serverStatus === "missed") {
+      uiStatus = "Missed (grace)"; badge = "GRACE";
+      setWarn(t.missed);
+    } else {
+      if (Number.isFinite(nowServing) && my === nowServing) { uiStatus = t.served; badge = "NOW"; setWarn(t.served); }
+      else if (Number.isFinite(nowServing) && my < nowServing) {
+        const diff = nowServing - my;
+        if (diff <= 5) { uiStatus="Missed (grace)"; badge="GRACE"; setWarn(t.missed); }
+        else { uiStatus="Auto-cancelled"; badge="CANCELLED"; setWarn(t.autoCancelled); ticket.status="cancelled"; saveTicket(); stopPolling(); updateSaveBtn(); }
       }
+    }
 
-      const units = unitsByRegionId.get(String(rid)) || [];
-      const items = units.map(u => {
-        const base = labelByLang(u, lang);
-        const prefix = (u.kind === "city")
-          ? (lang==="uz" ? "Shahar: " : lang==="ru" ? "Город: " : "City: ")
-          : (lang==="uz" ? "Tuman: " : lang==="ru" ? "Район: " : "District: ");
-        return { value: u.id, label: prefix + base };
+    let etaMin = null;
+    if (avgSec && Number.isFinite(ahead)) etaMin = (ahead * avgSec) / 60;
+
+    if (avgSec && Number.isFinite(ahead)) {
+      const etaMs = Math.max(0, Math.round(ahead * avgSec * 1000));
+      etaEndTs = Date.now() + etaMs;
+      startCountdown();
+    } else {
+      etaEndTs = null;
+      stopCountdown();
+    }
+
+    $("ticketNo").textContent = "#" + my;
+    $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${new Date(ticket.createdAt||Date.now()).toLocaleString()} • ${state.fullName}`;
+    $("aheadKpi").textContent = (ahead===null ? "—" : ahead);
+    $("behindKpi").textContent = (behind===null ? "—" : behind);
+    $("avgKpi").textContent = avgSec ? `${avgSec}s` : "—";
+    $("statusKpi").textContent = uiStatus;
+    $("etaText").textContent = "ETA: " + (etaMin===null ? "—" : (Math.round(etaMin) + " min"));
+
+    setTicketStateBadge(badge);
+    setTicketUIVisible(true);
+    $("takeBtn").disabled = true;
+  }
+
+  async function takeTicket(){
+    const t = getT(state.lang);
+
+    if (!state.fullName || state.fullName.length < 3) {
+      toast(t.needName);
+      updateSaveBtn();
+      return; // ✅ bu joy FUNCTION ichida, illegal return bo‘lmaydi
+    }
+
+    $("takeBtn").disabled = true;
+    setTicketStateBadge("…");
+
+    try{
+      const j = await apiPost("/api/take", {
+        orgId: state.orgId,
+        platform: "web",
+        userId: null,
+        fullName: state.fullName
       });
 
-      setOptions(sel, items, "—");
-      sel.disabled = false;
-      if (state.unitId) sel.value = state.unitId;
-    }
+      if (!j?.ok) throw new Error(j?.error || "take failed");
 
-    function rebuildOrgs(){
-      const lang = state.lang;
-      const rid = state.regionId;
-      const uid = state.unitId;
+      const num = Number(j.number ?? j.ticket?.number);
+      const nowServing = Number(j.nowServing);
+      const lastNumber = Number(j.lastNumber);
+      const avgServiceSec = Number(j.avgServiceSec ?? null);
 
-      if (!rid || !uid) {
-        $("orgSel").disabled = true;
-        setOptions($("orgSel"), [], "—");
-        return;
-      }
+      ticket = {
+        orgId: state.orgId,
+        ticketId: j.ticketId ?? j.ticket?.id ?? null,
+        number: num,
+        createdAt: Date.now(),
+        status: "active"
+      };
+      saveTicket();
 
-      const region = regions.find(r => String(r.id) === String(rid));
-      const units = unitsByRegionId.get(String(rid)) || [];
-      const unit = units.find(u => String(u.id) === String(uid));
-
-      if (!region || !unit) {
-        $("orgSel").disabled = true;
-        setOptions($("orgSel"), [], "—");
-        return;
-      }
-
-      const uzKey = normKey(region.name_uz) + "|" + normKey(unit.name_uz);
-      const orgs = orgsByUzKey[uzKey] || [];
-
-      if (!orgs.length) {
-        $("orgSel").disabled = true;
-        setOptions($("orgSel"), [], "—");
-        toast((UI[lang]||UI.uz).notFoundOrg);
-        return;
-      }
-
-      const items = orgs.map(o => ({
-        value: o.id,
-        label: (o.name && o.name[lang]) ? o.name[lang] : (o.name?.uz || o.id)
-      }));
-
-      setOptions($("orgSel"), items, "—");
-      $("orgSel").disabled = false;
-      if (state.orgId) $("orgSel").value = state.orgId;
-    }
-
-    function setTicketUIVisible(on){
-      $("ticketInfo").classList.toggle("hidden", !on);
-    }
-    function setWarn(msg){
-      const w = $("warnBox");
-      if (!msg) { w.classList.add("hidden"); w.textContent=""; return; }
-      w.textContent = msg;
-      w.classList.remove("hidden");
-    }
-    function setTicketStateBadge(txt){
-      $("ticketState").textContent = txt || "—";
-    }
-
-   function updateSaveBtn(){
-  const okSelect = !!(state.lang && state.regionId && state.unitId && state.orgId);
-  const okName = !!(state.fullName && state.fullName.length >= 3);
-
-  $("saveBtn").disabled = !(okSelect && okName);
-
-  const hasActive = (ticket && ticket.status === "active");
-  $("takeBtn").disabled = !(okSelect && okName) || hasActive;
-}
-
-
-    function computeAheadBehind(nowServing, lastNumber, myNumber){
-      if (![nowServing,lastNumber,myNumber].every(x=>isFinite(x))) return { ahead:null, behind:null };
-      const ahead = Math.max(0, myNumber - nowServing);
-      const behind = Math.max(0, lastNumber - myNumber);
-      return { ahead, behind };
-    }
-
-    function resetNotifsIfNewTicket(){
-      notified10 = false;
-      notifiedNow = false;
-      notifiedCancelled = false;
-    }
-
-    function startCountdown(){
-      stopCountdown();
-      countdownTimer = setInterval(()=>{
-        if (!etaEndTs) { $("countdownText").textContent = "Countdown: —"; return; }
-        const left = etaEndTs - Date.now();
-        $("countdownText").textContent = "Countdown: " + (left <= 0 ? "00:00:00" : fmtCountdown(left));
-      }, 1000);
-    }
-    function stopCountdown(){
-      if (countdownTimer) clearInterval(countdownTimer);
-      countdownTimer = null;
-    }
-
-    function maybeNotify(ahead, statusKpiText, badge){
-      const t = getT(state.lang);
-      if (!ticket || ticket.status !== "active") return;
-
-      // 10 ta oldin
-      if (ahead === 10 && !notified10) {
-        notified10 = true;
-        pushNotif("NAVBATUZ", t.notif10, "navbatuz-10");
-      }
-
-      // navbat keldi
-      if (badge === "NOW" && !notifiedNow) {
-        notifiedNow = true;
-        pushNotif("NAVBATUZ", t.notifNow, "navbatuz-now");
-      }
-
-      // cancelled
-      if ((badge === "CANCELLED") && !notifiedCancelled) {
-        notifiedCancelled = true;
-        pushNotif("NAVBATUZ", t.notifCancelled, "navbatuz-cancel");
-      }
-    }
-
-    function renderTicketStatus(data){
-      const t = getT(state.lang);
-
-      if (!ticket || !ticket.number) {
-        setTicketUIVisible(false);
-        setTicketStateBadge("—");
-        $("etaText").textContent = "ETA: —";
-        $("countdownText").textContent = "Countdown: —";
-        stopCountdown();
-        return;
-      }
-
-      const my = Number(ticket.number);
-      const nowServing = isFinite(data?.nowServing) ? data.nowServing : null;
-
-      // server ticket status (missed/cancelled/served) bo'lsa olamiz:
-      const serverTicketStatus = data?.ticket?.status || null;
-
-      let learnedAvg = null;
-      const orgId = ticket.orgId;
-      if (orgId && isFinite(nowServing)) learnedAvg = updateLearnedAvg(orgId, nowServing);
-
-      let avgSec = null;
-      if (isFinite(data?.avgServiceSec) && data.avgServiceSec > 0) avgSec = Math.round(data.avgServiceSec);
-      else avgSec = learnedAvg ?? getLearnedAvg(orgId);
-
-      let lastNumber = isFinite(data?.lastNumber) ? data.lastNumber : my;
-      const { ahead, behind } = computeAheadBehind(nowServing, lastNumber, my);
-
-      let uiStatus = "Waiting";
-      let badge = "Waiting";
-      let etaMin = null;
-
-      setWarn(null);
-      $("nowServingBadge").textContent = isFinite(nowServing) ? ("Now: " + nowServing) : "Now: —";
-
-      // ✅ serverdan cancelled/missed kelgan bo'lsa shuni ustun qo'yamiz
-      if (serverTicketStatus === "cancelled") {
-        uiStatus = "Auto-cancelled";
-        badge = "CANCELLED";
-        setWarn(t.autoCancelled);
-        ticket.status = "cancelled";
-        saveTicket();
-        stopPolling();
-        updateSaveBtn();
-      } else if (serverTicketStatus === "served") {
-        uiStatus = t.served;
-        badge = "NOW";
-        setWarn(t.served);
-      } else if (serverTicketStatus === "missed") {
-        uiStatus = "Missed (grace)";
-        badge = "GRACE";
-        if (isFinite(nowServing)) {
-          const diff = nowServing - my;
-          const leftGrace = Math.max(0, 5 - diff);
-          setWarn(`${t.missed} (Qolgan: ${leftGrace} ta)`);
-        } else {
-          setWarn(t.missed);
-        }
-      } else {
-        // client logic fallback
-        if (isFinite(nowServing) && my === nowServing) {
-          uiStatus = t.served;
-          badge = "NOW";
-          setWarn(t.served);
-        } else if (isFinite(nowServing) && my > nowServing) {
-          uiStatus = "Waiting";
-          badge = "Waiting";
-        } else if (isFinite(nowServing) && my < nowServing) {
-          const diff = nowServing - my;
-          if (diff <= 5) {
-            uiStatus = "Missed (grace)";
-            badge = "GRACE";
-            setWarn(`${t.missed} (Qolgan: ${5 - diff} ta)`);
-          } else {
-            uiStatus = "Auto-cancelled";
-            badge = "CANCELLED";
-            setWarn(t.autoCancelled);
-            ticket.status = "cancelled";
-            saveTicket();
-            tryCancelOnServer().catch(()=>{});
-            stopPolling();
-            updateSaveBtn();
-          }
-        }
-      }
-
-      if (avgSec && isFinite(ahead)) etaMin = (ahead * avgSec) / 60;
-
-      // countdown end time
-      if (avgSec && isFinite(ahead)) {
-        const etaMs = Math.max(0, Math.round(ahead * avgSec * 1000));
-        etaEndTs = Date.now() + etaMs;
-        startCountdown();
-      } else {
-        etaEndTs = null;
-        stopCountdown();
-      }
-
-      $("ticketNo").textContent = "#" + my;
-      $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${new Date(ticket.createdAt||Date.now()).toLocaleString()}`;
-      $("aheadKpi").textContent = (ahead===null ? "—" : ahead);
-      $("behindKpi").textContent = (behind===null ? "—" : behind);
-      $("avgKpi").textContent = avgSec ? `${avgSec}s` : "—";
-      $("statusKpi").textContent = uiStatus;
-      $("etaText").textContent = "ETA: " + (etaMin===null ? "—" : fmtTimeFromMinutes(etaMin));
-
-      setTicketStateBadge(badge);
-      setTicketUIVisible(true);
-      $("takeBtn").disabled = true;
-
-      // notifications
-      if (ahead !== null) lastAhead = ahead;
-      maybeNotify(ahead, uiStatus, badge);
-    }
-
-    // ===== Ticket API logic =====
-   if (!state.fullName || state.fullName.length < 3) {
-  toast(getT(state.lang).needName);
-  updateSaveBtn();
-  return;
-}
-
-const j = await apiPost("/api/take", {
-  orgId: state.orgId,
-  platform: "web",
-  userId: null,
-  fullName: state.fullName
-});
-
-
-        if (!j || !j.ok) throw new Error(j?.error || "take failed");
-
-        const num = Number(j.number ?? j.ticket?.number);
-        if (!isFinite(num) || num <= 0) throw new Error("bad number");
-
-        const nowServing = Number(j.nowServing ?? j.ticket?.nowServing ?? (j.ticket?.currentNumber ? (j.ticket.currentNumber+1) : null));
-        const lastNumber = Number(j.lastNumber ?? j.ticket?.lastNumber ?? j.ticket?.number ?? num);
-        const avgServiceSec = Number(j.avgServiceSec ?? j.ticket?.avgServiceSec ?? null);
-
-        ticket = {
-          orgId: state.orgId,
-          ticketId: j.ticketId ?? j.ticket?.id ?? null,
-          number: num,
-          createdAt: Date.now(),
-          status: "active"
-        };
-        saveTicket();
-        resetNotifsIfNewTicket();
-
-        toast(t.taken);
-        setOnlineBadge(true);
-
-        // notification permission so'raymiz (faqat ticket olinganda)
-        ensureNotifPermission().catch(()=>{});
-
-        renderTicketStatus({ nowServing, lastNumber, avgServiceSec, ticket: j.ticket || null });
-        startPolling();
-      }catch(e){
-        console.error(e);
-        setOnlineBadge(false);
-        toast(t.apiFail);
-        setTicketStateBadge("—");
-        updateSaveBtn();
-      }
-    }
-
-    async function fetchTicketStatus(){
-      if (!ticket || !ticket.orgId) return;
-      const orgId = ticket.orgId;
-
-      let j = null;
-      try{
-        if (ticket.ticketId) {
-          j = await apiGet(`/api/ticket/${encodeURIComponent(ticket.ticketId)}`);
-        } else {
-          j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&number=${encodeURIComponent(ticket.number)}`);
-        }
-      } catch (e) {
-        j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(orgId)}&number=${encodeURIComponent(ticket.number)}`);
-      }
-
-      if (!j || !j.ok) throw new Error(j?.error || "status fail");
-
-      const nowServing = Number(j.nowServing ?? j.ticket?.nowServing ?? (j.ticket?.currentNumber ? (j.ticket.currentNumber+1) : null));
-      const lastNumber = Number(j.lastNumber ?? j.ticket?.lastNumber ?? null);
-      const avgServiceSec = Number(j.avgServiceSec ?? j.ticket?.avgServiceSec ?? null);
-
+      toast(t.taken);
       setOnlineBadge(true);
+
       renderTicketStatus({ nowServing, lastNumber, avgServiceSec, ticket: j.ticket || null });
+      startPolling();
+      updateSaveBtn();
+    }catch(e){
+      console.error(e);
+      setOnlineBadge(false);
+      toast(t.apiFail);
+      setTicketStateBadge("—");
+      updateSaveBtn();
+    }
+  }
+
+  async function fetchTicketStatus(){
+    if (!ticket?.orgId) return;
+
+    let j = null;
+    try{
+      if (ticket.ticketId) j = await apiGet(`/api/ticket/${encodeURIComponent(ticket.ticketId)}`);
+      else j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
+    }catch(e){
+      // fallback
+      j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
     }
 
-    function startPolling(){
-      stopPolling();
-      pollTimer = setInterval(()=> {
-        fetchTicketStatus().catch((e)=>{
-          console.error(e);
-          setOnlineBadge(false);
-        });
-      }, 5000);
+    if (!j?.ok) throw new Error(j?.error || "status fail");
+    setOnlineBadge(true);
+    renderTicketStatus(j);
+  }
 
+  function startPolling(){
+    stopPolling();
+    pollTimer = setInterval(()=> {
       fetchTicketStatus().catch((e)=>{
         console.error(e);
         setOnlineBadge(false);
       });
+    }, 5000);
+
+    fetchTicketStatus().catch((e)=>{
+      console.error(e);
+      setOnlineBadge(false);
+    });
+  }
+
+  function stopPolling(){
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+    stopCountdown();
+  }
+
+  async function cancelTicket(){
+    const t = getT(state.lang);
+    if (!ticket) return;
+
+    $("cancelBtn").disabled = true;
+    try{
+      await apiPost("/api/cancel", { orgId: ticket.orgId, number: ticket.number });
+    }catch{}
+
+    ticket.status = "cancelled";
+    saveTicket();
+    stopPolling();
+
+    setTicketStateBadge("CANCELLED");
+    $("statusKpi").textContent = "Cancelled";
+    setWarn(null);
+    toast(t.cancelled);
+
+    $("cancelBtn").disabled = false;
+    updateSaveBtn();
+  }
+
+  // ===== Events =====
+  $("langSel").addEventListener("change", () => {
+    state.lang = $("langSel").value;
+    localStorage.setItem("lang", state.lang);
+    applyLang(state.lang);
+    rebuildRegions(); rebuildUnits(); rebuildOrgs();
+    updateSaveBtn();
+    if (ticket && ticket.status === "active") fetchTicketStatus().catch(()=>{});
+  });
+
+  $("fullNameInp").addEventListener("input", () => {
+    state.fullName = ($("fullNameInp").value || "").trim().replace(/\s+/g, " ").slice(0, 80);
+    localStorage.setItem("fullName", state.fullName);
+    updateSaveBtn();
+  });
+
+  $("regionSel").addEventListener("change", () => {
+    state.regionId = $("regionSel").value;
+    localStorage.setItem("regionId", state.regionId);
+    state.unitId = ""; state.orgId = "";
+    localStorage.setItem("unitId", ""); localStorage.setItem("orgId", "");
+    rebuildUnits(); rebuildOrgs(); updateSaveBtn();
+  });
+
+  $("unitSel").addEventListener("change", () => {
+    state.unitId = $("unitSel").value;
+    localStorage.setItem("unitId", state.unitId);
+    state.orgId = ""; localStorage.setItem("orgId", "");
+    rebuildOrgs(); updateSaveBtn();
+  });
+
+  $("orgSel").addEventListener("change", () => {
+    state.orgId = $("orgSel").value;
+    localStorage.setItem("orgId", state.orgId);
+    updateSaveBtn();
+  });
+
+  $("saveBtn").addEventListener("click", () => {
+    toast(getT(state.lang).saved);
+    updateSaveBtn();
+  });
+
+  $("takeBtn").addEventListener("click", () => takeTicket());
+  $("refreshBtn").addEventListener("click", () => {
+    fetchTicketStatus().catch((e)=>{
+      console.error(e);
+      setOnlineBadge(false);
+      toast(getT(state.lang).apiFail);
+    });
+  });
+  $("cancelBtn").addEventListener("click", () => cancelTicket());
+
+  $("servedBtn").addEventListener("click", async () => {
+    if (!ticket?.ticketId) { toast("ticketId yo‘q"); return; }
+    try{
+      const j = await apiPost("/api/ticket/served", { ticketId: ticket.ticketId });
+      if (!j?.ok) throw new Error(j?.error || "served error");
+      toast(getT(state.lang).servedOk);
+      fetchTicketStatus().catch(()=>{});
+    }catch(e){
+      console.error(e);
+      toast("Served xato");
     }
+  });
 
-    function stopPolling(){
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = null;
-      stopCountdown();
-    }
+  $("openTicketBtn").addEventListener("click", () => {
+    if (!ticket?.ticketId) { toast("ticketId yo‘q"); return; }
+    window.open(`/ticket.html?id=${encodeURIComponent(ticket.ticketId)}`, "_blank");
+  });
 
-    async function tryCancelOnServer(){
-      if (!ticket) return;
-      try{
-        await apiPost("/api/cancel", {
-          orgId: ticket.orgId,
-          number: ticket.number
-        });
-      }catch(e){}
-    }
-
-    async function cancelTicket(){
-      const t = getT(state.lang);
-      if (!ticket) return;
-
-      $("cancelBtn").disabled = true;
-      try{ await tryCancelOnServer(); } catch(_){}
-
-      ticket.status = "cancelled";
-      saveTicket();
-      stopPolling();
-
-      setTicketStateBadge("CANCELLED");
-      $("statusKpi").textContent = "Cancelled";
-      setWarn(null);
-      toast(t.cancelled);
-      pushNotif("NAVBATUZ", t.notifCancelled, "navbatuz-cancel-user");
-
-      $("cancelBtn").disabled = false;
-      updateSaveBtn();
-    }
-
-    // ===== Events =====
-    $("langSel").addEventListener("change", () => {
-      state.lang = $("langSel").value;
-      localStorage.setItem("lang", state.lang);
+  // ===== Boot =====
+  (async function boot(){
+    try{
+      $("langSel").value = state.lang;
       applyLang(state.lang);
+      $("fullNameInp").value = state.fullName || "";
+
+      try { await apiGet("/api/health"); setOnlineBadge(true); }
+      catch { setOnlineBadge(false); }
+
+      await loadAllData();
 
       rebuildRegions();
-      rebuildUnits();
-      rebuildOrgs();
-      updateSaveBtn();
+      if (state.regionId) $("regionSel").value = state.regionId;
 
-      if (ticket && ticket.status === "active") fetchTicketStatus().catch(()=>{});
-    });
-$("fullNameInp").addEventListener("input", () => {
-  state.fullName = ($("fullNameInp").value || "").trim().replace(/\s+/g, " ").slice(0, 80);
-  localStorage.setItem("fullName", state.fullName);
-  updateSaveBtn();
-});
-
-    $("regionSel").addEventListener("change", () => {
-      state.regionId = $("regionSel").value;
-      localStorage.setItem("regionId", state.regionId);
-
-      state.unitId = "";
-      state.orgId = "";
-      localStorage.removeItem("unitId");
-      localStorage.removeItem("orgId");
-
-      rebuildUnits();
-      rebuildOrgs();
-      updateSaveBtn();
-    });
-
-    $("unitSel").addEventListener("change", () => {
-      state.unitId = $("unitSel").value;
-      localStorage.setItem("unitId", state.unitId);
-
-      state.orgId = "";
-      localStorage.removeItem("orgId");
-
-      rebuildOrgs();
-      updateSaveBtn();
-    });
-
-    $("orgSel").addEventListener("change", () => {
-      state.orgId = $("orgSel").value;
-      localStorage.setItem("orgId", state.orgId);
-      updateSaveBtn();
-    });
-
-    $("saveBtn").addEventListener("click", () => {
-      localStorage.setItem("navbatuz_selection", JSON.stringify(state));
-      toast(getT(state.lang).saved);
-      updateSaveBtn();
-    });
-
-    $("takeBtn").addEventListener("click", () => takeTicket());
-    $("refreshBtn").addEventListener("click", () => {
-      fetchTicketStatus().catch((e)=>{
-        console.error(e);
-        setOnlineBadge(false);
-        toast(getT(state.lang).apiFail);
-      });
-    });
-    $("cancelBtn").addEventListener("click", () => cancelTicket());
-    $("servedBtn").addEventListener("click", async () => {
-  if (!ticket?.ticketId) {
-    toast("ticketId yo‘q");
-    return;
-  }
-
-  try{
-    const j = await apiPost("/api/ticket/served", {
-      ticketId: ticket.ticketId
-    });
-
-    if (!j.ok) throw new Error(j.error || "served error");
-
-    toast(getT(state.lang).servedOk);
-
-    // statusni yangilaymiz
-    fetchTicketStatus().catch(()=>{});
-
-  }catch(e){
-    console.error(e);
-    toast("Served xato");
-  }
-});
-
-
-    // ===== Boot =====
-    (async function boot(){
-      try{
-        $("langSel").value = state.lang;
-        applyLang(state.lang);
-$("fullNameInp").value = state.fullName || "";
-
-        try {
-          await apiGet("/api/health");
-          setOnlineBadge(true);
-        } catch(e) {
-          setOnlineBadge(false);
-        }
-
-        await loadAllData();
-
-        rebuildRegions();
-        if (state.regionId) $("regionSel").value = state.regionId;
-
-        rebuildUnits();
+      if (state.regionId) {
+        // units
+        const units = unitsByRegionId.get(String(state.regionId)) || [];
+        $("unitSel").disabled = false;
         if (state.unitId) $("unitSel").value = state.unitId;
-
-        rebuildOrgs();
-        if (state.orgId) $("orgSel").value = state.orgId;
-
-        loadTicket();
-        if (ticket && ticket.status === "active") {
-          setTicketUIVisible(true);
-          setTicketStateBadge("Active");
-          updateSaveBtn();
-          startPolling();
-        } else {
-          ticket = null;
-          saveTicket();
-          setTicketUIVisible(false);
-          setTicketStateBadge("—");
-          updateSaveBtn();
-        }
-      } catch(e){
-        console.error(e);
-        toast(getT(state.lang).apiFail);
-        setOnlineBadge(false);
       }
-    })();
-  </script>
+      rebuildUnits();
+      if (state.unitId) $("unitSel").value = state.unitId;
+
+      rebuildOrgs();
+      if (state.orgId) $("orgSel").value = state.orgId;
+
+      loadTicket();
+      if (ticket && ticket.status === "active") {
+        setTicketUIVisible(true);
+        setTicketStateBadge("Active");
+        updateSaveBtn();
+        startPolling();
+      } else {
+        ticket = null; saveTicket();
+        setTicketUIVisible(false);
+        setTicketStateBadge("—");
+        updateSaveBtn();
+      }
+    }catch(e){
+      console.error(e);
+      toast(getT(state.lang).apiFail);
+      setOnlineBadge(false);
+    }
+  })();
+</script>
 </body>
 </html>
-
