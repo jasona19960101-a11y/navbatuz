@@ -151,8 +151,6 @@
             <input id="orgSearch" placeholder="Muassasa qidiring / tanlang..." oninput="filterOrgList()" onclick="openOrgList()" />
             <div id="orgList" class="dropList"></div>
           </div>
-
-          <!-- hidden real orgId -->
           <input id="orgIdHidden" type="hidden" />
 
           <input id="adminKey" class="wide" placeholder="ADMIN_KEY (Render env dagi)" />
@@ -240,13 +238,11 @@
 
 <script>
   let GEO = null;
-
-  // normalized
   let REGIONS = [];
   let DISTRICTS = [];
-  let ORGS_BY_UNIT = {}; // orgsByUnitId
+  let ORGS_BY_KEY = {}; // orgsByUnitUzKey
 
-  let ORG_LIST = []; // current district orgs (array)
+  let ORG_LIST = [];
   let lastData = null;
 
   let autoTimer = null;
@@ -272,99 +268,60 @@
     return data;
   }
 
-  // --------------------------
-  // GEO detect / normalize
-  // --------------------------
-  function isObj(x){ return x && typeof x === "object" && !Array.isArray(x); }
-
-  function hasAnyName(o){
-    return !!(o && (o.name_uz || o.nameUz || o.name || o.title || o.label));
+  // -------------------------
+  // Name helpers (IMPORTANT)
+  // -------------------------
+  function pickName(o){
+    if (!o) return "";
+    // org.name can be {uz,ru,en}
+    if (typeof o.name === "object" && o.name) return o.name.uz || o.name.ru || o.name.en || "";
+    return o.name_uz || o.nameUz || o.name || o.title || o.label || "";
   }
 
-  // recursive find first array of objects that contain id and name-ish
-  function findArrayByHeuristic(root, mode){
-    const seen = new Set();
-    function walk(node){
-      if (!node || typeof node !== "object") return null;
-      if (seen.has(node)) return null;
-      seen.add(node);
+  function regionName(r){ return pickName(r) || String(r.id ?? ""); }
+  function districtName(d){ return pickName(d) || String(d.id ?? ""); }
 
-      if (Array.isArray(node) && node.length){
-        const sample = node[0];
-        if (isObj(sample) && ("id" in sample)){
-          if (mode === "regions"){
-            if (hasAnyName(sample) && !("region_id" in sample) && !("regionId" in sample)) return node;
-          }
-          if (mode === "districts"){
-            if (("region_id" in sample) || ("regionId" in sample) || ("parent_id" in sample) || ("parentId" in sample)) return node;
-          }
-        }
-      }
-
-      if (Array.isArray(node)){
-        for (const it of node){
-          const found = walk(it);
-          if (found) return found;
-        }
-      } else {
-        for (const k of Object.keys(node)){
-          const found = walk(node[k]);
-          if (found) return found;
-        }
-      }
-      return null;
-    }
-    return walk(root);
-  }
-
-  function normalizeGeo(geo){
-    // 1) regions
-    REGIONS = geo.regions || geo.viloyatlar || geo.region || [];
-    if (!Array.isArray(REGIONS) || !REGIONS.length){
-      REGIONS = findArrayByHeuristic(geo, "regions") || [];
-    }
-
-    // 2) districts/units
-    DISTRICTS = geo.districts || geo.tumanlar || geo.units || geo.district || [];
-    if (!Array.isArray(DISTRICTS) || !DISTRICTS.length){
-      DISTRICTS = findArrayByHeuristic(geo, "districts") || [];
-    }
-
-    // 3) org mapping
-    ORGS_BY_UNIT = geo.orgsByUnitId || geo.orgsByUnitUZ || {};
-    if (!isObj(ORGS_BY_UNIT) || !Object.keys(ORGS_BY_UNIT).length){
-      // fallback (senda oldin ham bor edi)
-      ORGS_BY_UNIT = {};
-      const m = geo.orgsByUnitUzKey || {};
-      if (isObj(m)){
-        // try to transform: key contains unitId -> set ORGS_BY_UNIT[unitId]=...
-        // (best effort)
-        for (const k of Object.keys(m)){
-          const list = m[k] || [];
-          // extract number-like id from key, last digits
-          const mm = String(k).match(/(\d+)\D*$/);
-          const unitId = mm ? mm[1] : k;
-          ORGS_BY_UNIT[String(unitId)] = list;
-        }
-      }
-    }
-  }
-
-  function nameOf(o){
-    return o?.name_uz || o?.nameUz || o?.name || o?.title || o?.label || String(o?.id ?? "");
-  }
   function districtRegionId(d){
     return d.region_id ?? d.regionId ?? d.parent_id ?? d.parentId ?? d.region ?? null;
   }
 
-  // --------------------------
-  // Select fill
-  // --------------------------
+  // -------------------------
+  // GEO load (your structure)
+  // -------------------------
+  async function loadGeo(){
+    const r = await fetch("/api/geo");
+    GEO = await r.json();
+
+    ORGS_BY_KEY = GEO.orgsByUnitUzKey || {};
+
+    const srcRegions = GEO?.sources?.regions;
+    const srcDistricts = GEO?.sources?.districts;
+
+    if (!srcRegions || !srcDistricts){
+      throw new Error("geo.json ichida sources.regions yoki sources.districts yo‘q");
+    }
+
+    // fetch real regions/districts list
+    const [rg, ds] = await Promise.all([
+      fetch(srcRegions).then(x => x.json()),
+      fetch(srcDistricts).then(x => x.json()),
+    ]);
+
+    REGIONS = Array.isArray(rg) ? rg : [];
+    DISTRICTS = Array.isArray(ds) ? ds : [];
+
+    if (!REGIONS.length) throw new Error("regions list bo‘sh (sources.regions dan)");
+    if (!DISTRICTS.length) throw new Error("districts list bo‘sh (sources.districts dan)");
+  }
+
+  // -------------------------
+  // Fill selects
+  // -------------------------
   function fillRegions(){
     const sel = $("selRegion");
     sel.innerHTML = `<option value="">Viloyat tanlang...</option>`;
     for (const r of REGIONS){
-      sel.innerHTML += `<option value="${esc(r.id)}">${esc(nameOf(r))}</option>`;
+      sel.innerHTML += `<option value="${esc(String(r.id))}">${esc(regionName(r))}</option>`;
     }
     $("selDistrict").innerHTML = `<option value="">Tuman tanlang...</option>`;
     resetOrgPicker();
@@ -380,30 +337,41 @@
 
     const list = DISTRICTS.filter(d => String(districtRegionId(d)) === String(rid));
     for (const d of list){
-      $("selDistrict").innerHTML += `<option value="${esc(d.id)}">${esc(nameOf(d))}</option>`;
+      $("selDistrict").innerHTML += `<option value="${esc(String(d.id))}">${esc(districtName(d))}</option>`;
     }
   }
 
   function onDistrictChange(){
-    const did = ($("selDistrict").value || "").trim();
     resetOrgPicker();
     clearTable();
-    if (!did) return;
 
-    ORG_LIST = (ORGS_BY_UNIT[String(did)] || []).slice();
+    const rid = ($("selRegion").value || "").trim();
+    const did = ($("selDistrict").value || "").trim();
+    if (!rid || !did) return;
+
+    const rObj = REGIONS.find(r => String(r.id) === String(rid));
+    const dObj = DISTRICTS.find(d => String(d.id) === String(did));
+    if (!rObj || !dObj) return;
+
+    const rName = regionName(rObj);
+    const dName = districtName(dObj);
+
+    // YOUR mapping key: "Viloyat|Tuman"
+    const k = `${rName}|${dName}`;
+    ORG_LIST = (ORGS_BY_KEY[k] || []).slice();
+
     if (!ORG_LIST.length){
-      setMsg("warn", "Bu tuman uchun muassasalar topilmadi (geo.json mapping tekshir).");
+      setMsg("warn", `Bu joy uchun muassasa topilmadi: "${k}" (orgsByUnitUzKey tekshir).`);
       return;
     }
 
-    // show searchable dropdown list
     renderOrgList(ORG_LIST);
     setMsg("ok", `Muassasa tanlang (topildi: ${ORG_LIST.length} ta)`);
   }
 
-  // --------------------------
+  // -------------------------
   // Searchable org dropdown
-  // --------------------------
+  // -------------------------
   function resetOrgPicker(){
     ORG_LIST = [];
     $("orgSearch").value = "";
@@ -416,20 +384,16 @@
     if (!ORG_LIST.length) return;
     $("orgList").style.display = "block";
   }
-
-  function closeOrgList(){
-    $("orgList").style.display = "none";
-  }
+  function closeOrgList(){ $("orgList").style.display = "none"; }
 
   function renderOrgList(list){
     const box = $("orgList");
     box.innerHTML = "";
-    // top 200 for UI performance (search with filter anyway)
-    const show = list.slice(0, 500);
+    const show = list.slice(0, 800);
     for (const o of show){
       const item = document.createElement("div");
       item.className = "dropItem";
-      item.textContent = nameOf(o);
+      item.textContent = pickName(o) || String(o.id);
       item.onclick = () => selectOrg(o);
       box.appendChild(item);
     }
@@ -440,34 +404,28 @@
     const q = ($("orgSearch").value || "").trim().toLowerCase();
     if (!ORG_LIST.length) return;
 
-    const filtered = !q
-      ? ORG_LIST
-      : ORG_LIST.filter(o => nameOf(o).toLowerCase().includes(q));
-
+    const filtered = !q ? ORG_LIST : ORG_LIST.filter(o => (pickName(o) || "").toLowerCase().includes(q));
     renderOrgList(filtered);
   }
 
   function selectOrg(o){
-    $("orgSearch").value = nameOf(o);
+    $("orgSearch").value = pickName(o) || String(o.id);
     $("orgIdHidden").value = String(o.id);
     closeOrgList();
     $("orgToolbar").style.display = "flex";
     loadQueue();
   }
 
-  // close dropdown when clicking outside
   document.addEventListener("click", (e) => {
     const wrap = e.target.closest(".dropWrap");
     if (!wrap) closeOrgList();
   });
 
-  function selectedOrgId(){
-    return ($("orgIdHidden").value || "").trim();
-  }
+  function selectedOrgId(){ return ($("orgIdHidden").value || "").trim(); }
 
-  // --------------------------
+  // -------------------------
   // Queue table
-  // --------------------------
+  // -------------------------
   function clearTable(){
     $("tbody").innerHTML = `<tr><td colspan="6" class="small">Muassasa tanlang...</td></tr>`;
     $("kNow").textContent="—"; $("kLast").textContent="—"; $("kAvg").textContent="—"; $("kCnt").textContent="—";
@@ -661,21 +619,12 @@
   // boot
   async function init(){
     try{
-      const r = await fetch("/api/geo");
-      GEO = await r.json();
-      normalizeGeo(GEO);
-
-      // if still empty, show debug
-      if (!REGIONS.length){
-        setMsg("bad", "geo.json’dan viloyatlar topilmadi. geo.json structure nomlarini moslab berish kerak.");
-      } else {
-        setMsg("warn", "Viloyat → Tuman tanlang, keyin muassasa qidirib tanlang. ADMIN_KEY kiriting.");
-      }
-
+      await loadGeo();
       fillRegions();
       clearTable();
+      setMsg("warn","Viloyat → Tuman tanlang, keyin muassasa qidirib tanlang. ADMIN_KEY kiriting.");
     }catch(e){
-      setMsg("bad","/api/geo yuklanmadi: " + e.message);
+      setMsg("bad", "GEO xato: " + e.message);
       clearTable();
     }
   }
