@@ -6,316 +6,404 @@
   <title>NAVBATUZ — Admin</title>
   <style>
     :root{
-      --bg:#0b1020; --card:rgba(255,255,255,.06); --b:rgba(255,255,255,.12);
-      --t:#e8eeff; --muted:rgba(232,238,255,.65); --ok:#52ffa8; --bad:#ff6b6b; --warn:#ffd166;
-      --shadow: 0 14px 40px rgba(0,0,0,.35);
+      --bg1:#070b16; --bg2:#0b1020;
+      --card:rgba(255,255,255,.06);
+      --b:rgba(255,255,255,.14);
+      --t:#e8eeff; --muted:rgba(232,238,255,.65);
+      --ok:#52ffa8; --bad:#ff6b6b; --warn:#ffd166;
+      --shadow:0 14px 40px rgba(0,0,0,.35);
       --r:18px;
     }
     *{box-sizing:border-box}
-    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; color:var(--t); background:radial-gradient(900px 500px at 10% 10%, rgba(82,255,168,.15), transparent 55%),
-          radial-gradient(900px 500px at 90% 35%, rgba(120,130,255,.18), transparent 55%),
-          linear-gradient(180deg, #070b16, #0b1020);}
-    .wrap{max-width:1100px; margin:0 auto; padding:20px;}
-    .top{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:14px;}
-    .brand{display:flex; gap:10px; align-items:center;}
-    .badge{width:34px;height:34px;border-radius:12px;border:1px solid var(--b); background:rgba(255,255,255,.06); display:grid; place-items:center; box-shadow:var(--shadow);}
-    .title{font-weight:800; letter-spacing:.7px}
-    .sub{color:var(--muted); font-size:13px}
-    .grid{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px;}
-    @media (max-width: 980px){ .grid{grid-template-columns:1fr;} }
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      color:var(--t);
+      background:
+        radial-gradient(900px 500px at 10% 10%, rgba(82,255,168,.15), transparent 55%),
+        radial-gradient(900px 500px at 90% 35%, rgba(120,130,255,.18), transparent 55%),
+        linear-gradient(180deg,var(--bg1),var(--bg2));
+    }
+    .wrap{max-width:1180px;margin:0 auto;padding:18px}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap}
+    .brand{display:flex;gap:10px;align-items:center}
+    .badge{
+      width:38px;height:38px;border-radius:14px;border:1px solid var(--b);
+      background:rgba(255,255,255,.06);display:grid;place-items:center;box-shadow:var(--shadow)
+    }
+    .title{font-weight:900;letter-spacing:.6px;font-size:18px}
+    .sub{color:var(--muted);font-size:13px;margin-top:2px}
 
-    .card{background:var(--card); border:1px solid var(--b); border-radius:var(--r); padding:14px; box-shadow:var(--shadow);}
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-    input, select{
-      background:rgba(255,255,255,.06); color:var(--t);
-      border:1px solid var(--b); border-radius:12px; padding:10px 12px;
-      outline:none; min-width: 240px;
+    .grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+    .card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .sp{height:10px}
+
+    input,select{
+      background:rgba(255,255,255,.06);color:var(--t);
+      border:1px solid var(--b);border-radius:12px;padding:10px 12px;outline:none;
     }
     input::placeholder{color:rgba(232,238,255,.45)}
+    input.mini{min-width:160px}
+    input.mid{min-width:240px}
+    input.wide{min-width:320px}
+
     button{
-      border:1px solid var(--b); background:rgba(255,255,255,.08);
-      color:var(--t); border-radius:12px; padding:10px 12px;
+      border:1px solid var(--b);
+      background:rgba(255,255,255,.08);
+      color:var(--t);
+      border-radius:12px;
+      padding:10px 12px;
       cursor:pointer;
+      user-select:none;
     }
     button:hover{background:rgba(255,255,255,.12)}
-    button.primary{border-color:rgba(82,255,168,.35); background:rgba(82,255,168,.12)}
-    button.danger{border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.12)}
-    button.warn{border-color:rgba(255,209,102,.35); background:rgba(255,209,102,.12)}
-    button:disabled{opacity:.55; cursor:not-allowed}
+    button.primary{border-color:rgba(82,255,168,.35);background:rgba(82,255,168,.12)}
+    button.danger{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.12)}
+    button.warn{border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.12)}
+    button:disabled{opacity:.55;cursor:not-allowed}
 
-    .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;}
-    @media (max-width: 760px){ .kpis{grid-template-columns:repeat(2,1fr);} }
-    .kpi{padding:10px 12px; border-radius:14px; border:1px solid var(--b); background:rgba(255,255,255,.05)}
-    .kpi .l{font-size:12px; color:var(--muted)}
-    .kpi .v{font-size:20px; font-weight:800; margin-top:2px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
+    .kpi{
+      padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05)
+    }
+    .kpi .l{font-size:12px;color:var(--muted)}
+    .kpi .v{font-size:20px;font-weight:900;margin-top:2px}
 
-    table{width:100%; border-collapse:collapse; margin-top:10px; overflow:hidden; border-radius:14px;}
-    th,td{padding:10px; border-bottom:1px solid rgba(255,255,255,.08); font-size:13px;}
-    th{color:rgba(232,238,255,.75); text-align:left; font-weight:700}
+    .msg{margin-top:10px;font-size:13px;color:var(--muted)}
+    .msg .ok{color:var(--ok)}
+    .msg .bad{color:var(--bad)}
+    .msg .warn{color:var(--warn)}
+
+    table{width:100%;border-collapse:collapse;margin-top:10px;overflow:hidden;border-radius:14px}
+    th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}
+    th{color:rgba(232,238,255,.75);text-align:left;font-weight:800}
     tr:hover td{background:rgba(255,255,255,.03)}
-    .pill{display:inline-block; padding:3px 8px; border-radius:999px; border:1px solid var(--b); background:rgba(255,255,255,.06); font-size:12px;}
-    .pill.ok{border-color:rgba(82,255,168,.35); background:rgba(82,255,168,.10)}
-    .pill.bad{border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.10)}
-    .pill.warn{border-color:rgba(255,209,102,.35); background:rgba(255,209,102,.10)}
-    .msg{margin-top:10px; font-size:13px; color:var(--muted)}
-    .err{color:var(--bad)}
-    .oktxt{color:var(--ok)}
-    .small{font-size:12px; color:rgba(232,238,255,.6)}
-    .rightActions{display:flex; gap:10px; flex-wrap:wrap}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+    .pill{
+      display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);
+      background:rgba(255,255,255,.06);font-size:12px
+    }
+    .pill.ok{border-color:rgba(82,255,168,.35);background:rgba(82,255,168,.10)}
+    .pill.warn{border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.10)}
+    .pill.bad{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.10)}
+
+    .rightBox .hint{color:rgba(232,238,255,.75);font-weight:800}
+    .small{font-size:12px;color:rgba(232,238,255,.6)}
+    .divider{height:1px;background:rgba(255,255,255,.12);margin:12px 0}
   </style>
 </head>
-
 <body>
-<div class="wrap">
-  <div class="top">
-    <div class="brand">
-      <div class="badge">🛠️</div>
-      <div>
-        <div class="title">NAVBATUZ — Admin Panel</div>
-        <div class="sub">Next / Delete / Live queue monitoring</div>
-      </div>
-    </div>
-    <div class="small">URL: <span id="baseUrl"></span></div>
-  </div>
+  <div class="wrap">
 
-  <div class="grid">
-    <div class="card">
-      <div class="row">
-        <input id="orgId" placeholder="orgId (masalan: yallama_moyka)" />
-        <button class="primary" id="btnLoad">Load</button>
-        <button id="btnRefresh">Refresh</button>
-        <label class="small"><input type="checkbox" id="auto" checked /> auto (5s)</label>
-      </div>
-
-      <div class="kpis">
-        <div class="kpi"><div class="l">Now serving</div><div class="v" id="kNow">—</div></div>
-        <div class="kpi"><div class="l">Last number</div><div class="v" id="kLast">—</div></div>
-        <div class="kpi"><div class="l">Avg service</div><div class="v" id="kAvg">—</div></div>
-        <div class="kpi"><div class="l">Waiting count</div><div class="v" id="kCnt">—</div></div>
-      </div>
-
-      <div class="row" style="margin-top:12px; justify-content:space-between;">
-        <div class="rightActions">
-          <button class="warn" id="btnNext">NEXT ➜</button>
-          <button class="danger" id="btnDelSelected">Delete selected</button>
-          <button class="danger" id="btnDelAll">Delete ALL (waiting/missed)</button>
+    <div class="top">
+      <div class="brand">
+        <div class="badge">🛠️</div>
+        <div>
+          <div class="title">NAVBATUZ — Admin Panel</div>
+          <div class="sub">Live queue • Search • Auto refresh • Next / Delete / DeleteAll / Reset</div>
         </div>
-        <div class="small">Delete bosilganda admin parol so‘raladi.</div>
       </div>
 
-      <div class="msg" id="msg"></div>
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width:42px;">Sel</th>
-            <th style="width:70px;">No</th>
-            <th style="width:110px;">Status</th>
-            <th>Name</th>
-            <th style="width:170px;">Created</th>
-            <th style="width:110px;">Ticket ID</th>
-          </tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="6" class="small">Load qiling…</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div style="font-weight:800; margin-bottom:8px;">Qo‘shimcha admin funksiyalar</div>
-      <div class="small">
-        ✅ Next (navbatni oldinga surish)<br/>
-        ✅ Bitta userni (ticket) bekor qilish (cancel/delete)<br/>
-        ✅ Hammasini (waiting/missed) bekor qilish<br/>
-        ✅ Live refresh (auto polling)<br/><br/>
-        Tavsiya (xohlasang keyin qo‘shamiz):<br/>
-        • Admin log/audit (kim, qachon delete qildi)<br/>
-        • Org ro‘yxatini dropdown qilib chiqarish (geo.json dan)<br/>
-        • “Mark missed/served” tugmalar (agar kerak bo‘lsa)<br/>
+      <div class="row">
+        <button class="primary" id="btnRefresh" onclick="loadQueue()">🔄 Yangilash</button>
+        <button id="btnAuto" onclick="toggleAuto()">⏱ Auto: OFF</button>
       </div>
     </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <div class="card">
+        <div class="row">
+          <input id="orgId" class="mid" placeholder="orgId (masalan: 160 yoki UUID)" />
+          <input id="adminKey" class="wide" placeholder="ADMIN_KEY (Render env dagi)" />
+          <input id="search" class="mid" placeholder="Search: #raqam / ism / id / status" oninput="renderTable()" />
+          <select id="statusFilter" onchange="renderTable()">
+            <option value="all">Status: hammasi</option>
+            <option value="waiting">waiting</option>
+            <option value="missed">missed</option>
+          </select>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi">
+            <div class="l">Now serving</div>
+            <div class="v" id="kNow">—</div>
+          </div>
+          <div class="kpi">
+            <div class="l">Last number</div>
+            <div class="v" id="kLast">—</div>
+          </div>
+          <div class="kpi">
+            <div class="l">Avg service</div>
+            <div class="v" id="kAvg">—</div>
+          </div>
+          <div class="kpi">
+            <div class="l">Tickets count</div>
+            <div class="v" id="kCnt">—</div>
+          </div>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:70px">Pick</th>
+              <th style="width:90px">#</th>
+              <th>Full name</th>
+              <th style="width:110px">Status</th>
+              <th style="width:250px">Ticket ID</th>
+              <th style="width:180px">Created</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+
+        <div class="row" style="margin-top:10px">
+          <button class="danger" onclick="deleteSelected()">🗑 Delete selected</button>
+          <span class="small">(* faqat waiting/missed lar cancel bo‘ladi)</span>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="card rightBox">
+        <div class="hint">Tez amallar</div>
+        <div class="small" style="margin-top:6px">
+          Header: <span class="mono">X-Admin-Key</span> orqali himoyalangan.
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <button onclick="nextOne()">➡️ NEXT</button>
+          <button class="warn" onclick="deleteAll()">🧹 Delete ALL</button>
+          <button class="danger" onclick="resetOrg()">💣 RESET</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <label class="small">Auto refresh:</label>
+          <select id="autoEvery" onchange="applyAutoInterval()">
+            <option value="0">OFF</option>
+            <option value="3">3s</option>
+            <option value="5">5s</option>
+            <option value="10" selected>10s</option>
+            <option value="20">20s</option>
+            <option value="30">30s</option>
+          </select>
+          <button onclick="applyAutoInterval()">✅ Apply</button>
+        </div>
+
+        <div class="small" style="margin-top:10px">
+          Tip: Search’da <b>#23</b> yoki <b>Ali</b> yoki ticket <b>UUID</b> yoz.
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="small">
+          Admin sahifa manzili: <span class="mono">/admin.html</span><br/>
+          Misol: <span class="mono">https://domain.com/admin.html</span>
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
 
 <script>
-  const $ = (id)=>document.getElementById(id);
+  let lastData = null;
+  let autoTimer = null;
+  let autoOn = false;
 
-  const state = {
-    orgId: "",
-    timer: null,
-    selectedId: null
-  };
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return (s||"").toString().replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+  function org(){ return ($("orgId").value || "").trim(); }
+  function key(){ return ($("adminKey").value || "").trim(); }
 
-  $("baseUrl").textContent = location.origin;
-
-  function setMsg(text, kind=""){
-    $("msg").className = "msg " + (kind || "");
-    $("msg").textContent = text || "";
+  function setMsg(type, text){
+    const cls = type === "ok" ? "ok" : (type === "warn" ? "warn" : "bad");
+    $("msg").innerHTML = `<span class="${cls}">${type.toUpperCase()}:</span> ${esc(text)}`;
   }
 
   async function api(url, opts={}){
-    const r = await fetch(url, opts);
-    const j = await r.json().catch(()=>null);
-    if (!r.ok || !j || !j.ok){
-      const msg = (j && j.error) ? j.error : ("API error: " + r.status);
-      throw new Error(msg);
-    }
-    return j;
+    const headers = Object.assign({}, opts.headers || {}, {
+      "Content-Type": "application/json",
+      "X-Admin-Key": key()
+    });
+    const res = await fetch(url, Object.assign({}, opts, { headers }));
+    const data = await res.json().catch(()=>({ ok:false, error:"JSON parse error" }));
+    if (!res.ok) throw new Error(data?.error || ("HTTP " + res.status));
+    return data;
   }
 
-  function askAdminKey(){
-    const v = prompt("Admin parol (ADMIN_KEY) ni kiriting:");
-    if (!v || v.length < 4) return null;
-    return v;
-  }
-
-  function fmtDate(d){
-    if (!d) return "-";
-    try { return new Date(d).toLocaleString(); } catch { return String(d); }
-  }
-
-  function statusPill(st){
-    const s = (st||"").toLowerCase();
+  function statusPill(s){
     if (s === "waiting") return `<span class="pill ok">waiting</span>`;
-    if (s === "missed")  return `<span class="pill warn">missed</span>`;
-    if (s === "served")  return `<span class="pill ok">served</span>`;
-    if (s === "cancelled") return `<span class="pill bad">cancelled</span>`;
-    return `<span class="pill">${st||"-"}</span>`;
+    if (s === "missed") return `<span class="pill warn">missed</span>`;
+    return `<span class="pill">${esc(s)}</span>`;
   }
 
-  function render(data){
-    $("kNow").textContent  = (data.nowServing ?? "—");
-    $("kLast").textContent = (data.lastNumber ?? "—");
-    $("kAvg").textContent  = (data.avgServiceSec ? (Math.round(data.avgServiceSec/60) + " min") : "—");
-    $("kCnt").textContent  = (Array.isArray(data.tickets) ? data.tickets.length : 0);
+  function updateKPIs(data){
+    $("kNow").textContent  = data?.nowServing ?? "—";
+    $("kLast").textContent = data?.lastNumber ?? "—";
+    $("kAvg").textContent  = (data?.avgServiceSec ? (Math.round(data.avgServiceSec/60) + " min") : "—");
+    $("kCnt").textContent  = (data?.tickets?.length ?? 0);
+  }
 
-    const rows = (data.tickets || []).map(t => {
-      const id = String(t.id ?? "");
-      const num = (t.number ?? "-");
-      const st = (t.status ?? "-");
-      const name = (t.fullName ?? t.full_name ?? "-");
-      const created = fmtDate(t.createdAt ?? t.created_at);
+  function renderTable(){
+    const tb = $("tbody");
+    const q = ($("search").value || "").trim().toLowerCase();
+    const sf = $("statusFilter").value;
 
+    const list = (lastData?.tickets || []).filter(t => {
+      if (sf !== "all" && (t.status !== sf)) return false;
+      if (!q) return true;
+      const num = (t.number ?? "").toString();
+      const name = (t.fullName || "").toLowerCase();
+      const id = (t.id || "").toLowerCase();
+      const st = (t.status || "").toLowerCase();
+      return num.includes(q.replace("#","")) || name.includes(q) || id.includes(q) || st.includes(q);
+    });
+
+    tb.innerHTML = list.map(t => {
+      const created = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
       return `
         <tr>
-          <td>
-            <input type="radio" name="sel" value="${id}" ${state.selectedId===id?"checked":""}/>
-          </td>
-          <td><b>#${num}</b></td>
-          <td>${statusPill(st)}</td>
-          <td>${escapeHtml(name)}</td>
-          <td class="small">${escapeHtml(created)}</td>
-          <td class="small">${escapeHtml(id.slice(0,8))}</td>
+          <td><input type="radio" name="pick" value="${esc(t.id)}"></td>
+          <td><span class="pill">#${esc(t.number)}</span></td>
+          <td>${esc(t.fullName || "")}</td>
+          <td>${statusPill(t.status)}</td>
+          <td class="mono">${esc(t.id)}</td>
+          <td class="small">${esc(created)}</td>
         </tr>
       `;
     }).join("");
 
-    $("tbody").innerHTML = rows || `<tr><td colspan="6" class="small">Hech narsa yo‘q</td></tr>`;
-
-    document.querySelectorAll('input[name="sel"]').forEach(r=>{
-      r.addEventListener("change", ()=>{
-        state.selectedId = r.value;
-      });
-    });
+    if (!list.length) {
+      tb.innerHTML = `<tr><td colspan="6" class="small">Hech narsa topilmadi.</td></tr>`;
+    }
   }
 
-  function escapeHtml(s){
-    return String(s ?? "").replace(/[&<>"']/g, (c)=>({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
+  async function loadQueue(){
+    const orgId = org();
+    if (!orgId) return setMsg("bad","orgId kiriting");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
+
+    $("btnRefresh").disabled = true;
+    try{
+      const data = await api(`/api/admin/queue?orgId=${encodeURIComponent(orgId)}`, { method:"GET" });
+      lastData = data;
+      updateKPIs(data);
+      renderTable();
+      setMsg("ok", `Yangilandi. Tickets: ${(data.tickets||[]).length}`);
+    }catch(e){
+      setMsg("bad", e.message);
+    }finally{
+      $("btnRefresh").disabled = false;
+    }
   }
 
-  async function load(){
-    const org = ($("orgId").value || "").trim();
-    if (!org) { setMsg("orgId kiriting", "err"); return; }
-    state.orgId = org;
-    setMsg("Loading…");
+  async function nextOne(){
+    const orgId = org();
+    if (!orgId) return setMsg("bad","orgId kiriting");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
 
-    const j = await api(`/api/admin/queue?orgId=${encodeURIComponent(org)}`);
-    render(j);
-    setMsg("OK", "oktxt");
-  }
-
-  async function doNext(){
-    if (!state.orgId) { setMsg("Avval orgId Load qiling", "err"); return; }
-    setMsg("NEXT…");
-    const key = askAdminKey();
-    if (!key) { setMsg("Bekor qilindi", ""); return; }
-
-    const j = await api("/api/admin/next", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "X-Admin-Key": key },
-      body: JSON.stringify({ orgId: state.orgId })
-    });
-
-    // next endpoint qaytargan current/nowServing/lastNumber bo‘yicha darhol refresh qilamiz
-    await load();
-    setMsg("NEXT ✅", "oktxt");
+    if (!confirm("NEXT qilamizmi? (navbat oldinga suriladi)")) return;
+    try{
+      await api(`/api/admin/next`, { method:"POST", body: JSON.stringify({ orgId }) });
+      setMsg("ok","NEXT OK");
+      await loadQueue();
+    }catch(e){
+      setMsg("bad", e.message);
+    }
   }
 
   async function deleteSelected(){
-    if (!state.orgId) { setMsg("Avval orgId Load qiling", "err"); return; }
-    if (!state.selectedId) { setMsg("Select qiling (radio)", "err"); return; }
+    const pick = document.querySelector('input[name="pick"]:checked');
+    if (!pick) return setMsg("bad","Ticket tanlang");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
 
-    const ok = confirm("Tanlangan ticketni DELETE (cancel) qilamizmi?");
-    if (!ok) return;
+    if (!confirm("Tanlangan ticket CANCEL qilinsinmi?")) return;
 
-    const key = askAdminKey();
-    if (!key) { setMsg("Bekor qilindi", ""); return; }
-
-    setMsg("Deleting…");
-    await api("/api/admin/delete", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "X-Admin-Key": key },
-      body: JSON.stringify({ ticketId: state.selectedId })
-    });
-
-    state.selectedId = null;
-    await load();
-    setMsg("Deleted ✅", "oktxt");
+    try{
+      await api(`/api/admin/delete`, { method:"POST", body: JSON.stringify({ ticketId: pick.value }) });
+      setMsg("ok","Delete OK");
+      await loadQueue();
+    }catch(e){
+      setMsg("bad", e.message);
+    }
   }
 
   async function deleteAll(){
-    if (!state.orgId) { setMsg("Avval orgId Load qiling", "err"); return; }
+    const orgId = org();
+    if (!orgId) return setMsg("bad","orgId kiriting");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
 
-    const ok = confirm("DIQQAT: Bu org bo‘yicha barcha waiting/missed ticketlar CANCEL bo‘ladi. Davom etamizmi?");
-    if (!ok) return;
+    if (!confirm("HAMMASI (waiting/missed) CANCEL bo‘lsinmi?")) return;
 
-    const key = askAdminKey();
-    if (!key) { setMsg("Bekor qilindi", ""); return; }
-
-    setMsg("Deleting ALL…");
-    await api("/api/admin/deleteAll", {
-      method:"POST",
-      headers:{ "Content-Type":"application/json", "X-Admin-Key": key },
-      body: JSON.stringify({ orgId: state.orgId })
-    });
-
-    state.selectedId = null;
-    await load();
-    setMsg("Delete ALL ✅", "oktxt");
+    try{
+      const r = await api(`/api/admin/deleteAll`, { method:"POST", body: JSON.stringify({ orgId }) });
+      setMsg("ok", `DeleteAll OK. cancelledCount: ${r.cancelledCount ?? 0}`);
+      await loadQueue();
+    }catch(e){
+      setMsg("bad", e.message);
+    }
   }
 
-  function startAuto(){
-    stopAuto();
-    state.timer = setInterval(()=>{
-      if ($("auto").checked && state.orgId) load().catch(e=>setMsg(e.message,"err"));
-    }, 5000);
+  async function resetOrg(){
+    const orgId = org();
+    if (!orgId) return setMsg("bad","orgId kiriting");
+    if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
+
+    if (!confirm("RESET xavfli: current=0 next=1 va waiting/missed CANCEL. Davom etamizmi?")) return;
+
+    try{
+      await api(`/api/admin/reset`, { method:"POST", body: JSON.stringify({ orgId }) });
+      setMsg("warn","RESET OK");
+      await loadQueue();
+    }catch(e){
+      setMsg("bad", e.message);
+    }
   }
+
+  function toggleAuto(){
+    autoOn = !autoOn;
+    if (autoOn) {
+      applyAutoInterval(true);
+    } else {
+      stopAuto();
+    }
+  }
+
   function stopAuto(){
-    if (state.timer) clearInterval(state.timer);
-    state.timer = null;
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
+    autoOn = false;
+    $("btnAuto").textContent = "⏱ Auto: OFF";
   }
 
-  $("btnLoad").addEventListener("click", ()=> load().catch(e=>setMsg(e.message,"err")));
-  $("btnRefresh").addEventListener("click", ()=> load().catch(e=>setMsg(e.message,"err")));
-  $("btnNext").addEventListener("click", ()=> doNext().catch(e=>setMsg(e.message,"err")));
-  $("btnDelSelected").addEventListener("click", ()=> deleteSelected().catch(e=>setMsg(e.message,"err")));
-  $("btnDelAll").addEventListener("click", ()=> deleteAll().catch(e=>setMsg(e.message,"err")));
-  $("auto").addEventListener("change", startAuto);
+  function applyAutoInterval(forceOn=false){
+    const sec = Number($("autoEvery").value || 0);
+    if (!sec || sec <= 0) {
+      stopAuto();
+      return;
+    }
+    if (forceOn) autoOn = true;
+    if (!autoOn) autoOn = true;
 
-  startAuto();
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = setInterval(() => loadQueue(), sec * 1000);
+    $("btnAuto").textContent = `⏱ Auto: ON (${sec}s)`;
+    loadQueue();
+  }
+
+  // Auto: default apply (10s) faqat orgId+key kiritilgandan keyin bosilsa yaxshi,
+  // shunga avtomatik start qilmaymiz.
+  setMsg("warn","orgId va ADMIN_KEY kiriting, keyin Yangilash yoki Apply (auto) bosing.");
 </script>
 </body>
 </html>
