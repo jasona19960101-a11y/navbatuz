@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import { Pool } from "pg";
 import QRCode from "qrcode";
-import { startBot, tgSend } from "./bot.js";
+import { startBot, tgSend, getBot } from "./bot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +44,23 @@ if (corsOrigin) {
 }
 
 app.use(express.json({ limit: "2mb" }));
+
+
+// Telegram webhook endpoint (WEBHOOK_URL bo'lsa, bot polling emas webhook rejimida ishlaydi)
+app.post("/telegram", async (req, res) => {
+  const bot = getBot();
+  if (!bot) return res.sendStatus(503);
+
+  try {
+    await bot.handleUpdate(req.body, res);
+    if (!res.headersSent) res.sendStatus(200);
+  } catch (e) {
+    console.error("❌ Telegram webhook error:", e);
+    if (!res.headersSent) res.sendStatus(500);
+  }
+});
+
+
 
 // Static
 app.use(express.static(path.join(__dirname, "public"), {
