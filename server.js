@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import { Pool } from "pg";
 import QRCode from "qrcode";
-import { startBot } from "./bot.js";
+import { startBot, tgSend } from "./bot.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -106,6 +106,12 @@ async function initDb() {
     );
   `);
 
+
+  // telegram notification fields (bot users)
+  try { await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS telegram_chat_id BIGINT;`); } catch {}
+  try { await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS telegram_user_id BIGINT;`); } catch {}
+  try { await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS last_notified_remaining INTEGER;`); } catch {}
+
   // indexes
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_num ON tickets(org_id, number);`); } catch {}
   try { await pool.query(`CREATE INDEX IF NOT EXISTS idx_tickets_org_status ON tickets(org_id, status);`); } catch {}
@@ -188,6 +194,69 @@ function publicBaseUrl() {
   return process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 }
 
+
+// =======================
+// TELEGRAM NOTIFICATIONS
+// =======================
+async function notifyQueueProgress(orgId) {
+  try {
+    // get nowServing
+    await ensureOrgState(orgId);
+    const st = await pool.query(`SELECT current_number FROM org_state WHERE org_id=$1`, [orgId]);
+    const currentNumber = safeInt(st.rows[0]?.current_number, 0);
+    const nowServing = currentNumber + 1;
+
+    // waiting tickets that came from bot (telegram_chat_id set)
+    const r = await pool.query(
+      `
+      SELECT id, number, full_name, telegram_chat_id, last_notified_remaining
+      FROM tickets
+      WHERE org_id=$1
+        AND status='waiting'
+        AND telegram_chat_id IS NOT NULL
+        AND number >= $2
+      ORDER BY number ASC
+      LIMIT 500
+      `,
+      [orgId, nowServing]
+    );
+
+    for (const row of r.rows) {
+      const num = safeInt(row.number, 0);
+      const remaining = Math.max(0, num - nowServing);
+
+      // send only on every 2 steps (0,2,4,6...) to reduce spam
+      if (remaining % 2 !== 0) continue;
+
+      const lastSent = row.last_notified_remaining === null ? null : safeInt(row.last_notified_remaining, -9999);
+      if (lastSent === remaining) continue;
+
+      const chatId = row.telegram_chat_id;
+      if (!chatId) continue;
+
+      const name = (row.full_name || "").trim();
+
+      let text = "";
+      if (remaining === 0) {
+        text = `✅ Navbatingiz keldi!\nRaqam: ${num}\n${name ? `Ism: ${name}\n` : ""}Iltimos, oynaga yaqinlashing.`;
+      } else {
+        text = `⏳ Navbatingizga ${remaining} ta qoldi.\nRaqam: ${num}${name ? `\nIsm: ${name}` : ""}`;
+      }
+
+      const ok = await tgSend(chatId, text);
+      if (ok) {
+        await pool.query(
+          `UPDATE tickets SET last_notified_remaining=$2, updated_at=now() WHERE id=$1`,
+          [row.id, remaining]
+        );
+      }
+    }
+  } catch (e) {
+    console.error("notifyQueueProgress error:", e?.message || e);
+  }
+}
+
+
 async function makeQr(ticketId) {
   const qrData = `${publicBaseUrl()}/ticket.html?id=${ticketId}`;
   let qrPngBase64 = null;
@@ -234,7 +303,7 @@ app.get("/api/geo", (req, res) => {
 // Ticket olish
 app.post("/api/take", async (req, res) => {
   try {
-    const { orgId, platform = "web", userId = null, fullName = "" } = req.body || {};
+    const { orgId, platform = "web", userId = null, fullName = "", telegramChatId = null, telegramUserId = null } = req.body || {};
     const geo = loadGeo();
 
     const org = safeStr(orgId, "").trim();
@@ -268,10 +337,18 @@ app.post("/api/take", async (req, res) => {
       const assignedNumber = Math.max(nextNumber, currentNumber + 1);
 
       const ins = await client.query(
-        `INSERT INTO tickets (org_id, number, status, platform, user_id, full_name)
-         VALUES ($1,$2,'waiting',$3,$4,$5)
+        `INSERT INTO tickets (org_id, number, status, platform, user_id, full_name, telegram_chat_id, telegram_user_id)
+         VALUES ($1,$2,'waiting',$3,$4,$5,$6,$7)
          RETURNING id, org_id, number, status, created_at`,
-        [org, assignedNumber, safeStr(platform, "web").slice(0, 30), safeStr(userId, "").slice(0, 80) || null, full_name]
+        [
+          org,
+          assignedNumber,
+          safeStr(platform, "web").slice(0, 30),
+          safeStr(userId, "").slice(0, 80) || null,
+          full_name,
+          telegramChatId ? BigInt(telegramChatId) : null,
+          telegramUserId ? BigInt(telegramUserId) : null,
+        ]
       );
 
       await client.query(
@@ -556,6 +633,9 @@ app.post("/api/ticket/served", async (req, res) => {
 
       await client.query("COMMIT");
 
+      // 🔔 notifications
+      notifyQueueProgress(ticket.org_id);
+
       return res.json({
         ok: true,
         served: true,
@@ -740,6 +820,8 @@ app.post("/api/admin/skip", requireAdmin, async (req, res) => {
       }
 
       await client.query("COMMIT");
+      // 🔔 notifications
+      notifyQueueProgress(org);
       return res.json({ ok: true, skipped: true });
     } catch (e) {
       await client.query("ROLLBACK");
@@ -753,7 +835,7 @@ app.post("/api/admin/skip", requireAdmin, async (req, res) => {
   }
 });
 
-// ADMIN: next
+// ADMIN: next (auto-served + notifications)
 app.post("/api/admin/next", requireAdmin, async (req, res) => {
   try {
     const { orgId } = req.body || {};
@@ -761,6 +843,8 @@ app.post("/api/admin/next", requireAdmin, async (req, res) => {
     if (!org) return res.status(400).json({ ok: false, error: "orgId kerak" });
 
     const client = await pool.connect();
+    let out = null;
+
     try {
       await client.query("BEGIN");
 
@@ -777,7 +861,28 @@ app.post("/api/admin/next", requireAdmin, async (req, res) => {
 
       const currentNumber = safeInt(st.rows[0]?.current_number, 0);
       const nextNumber = safeInt(st.rows[0]?.next_number, 1);
+      const nowServing = currentNumber + 1;
 
+      // ✅ If the current ticket exists and still waiting/missed -> mark as served automatically
+      const cur = await client.query(
+        `SELECT id FROM tickets
+         WHERE org_id=$1 AND number=$2 AND status IN ('waiting','missed')
+         ORDER BY created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [org, nowServing]
+      );
+
+      if (cur.rowCount) {
+        await client.query(
+          `UPDATE tickets
+           SET status='served', served_at=now(), updated_at=now()
+           WHERE id=$1`,
+          [cur.rows[0].id]
+        );
+      }
+
+      // advance queue
       await client.query(
         `UPDATE org_state SET current_number=current_number+1, updated_at=now() WHERE org_id=$1`,
         [org]
@@ -785,12 +890,17 @@ app.post("/api/admin/next", requireAdmin, async (req, res) => {
 
       await client.query("COMMIT");
 
-      return res.json({
+      out = {
         ok: true,
         currentNumber: currentNumber + 1,
         nowServing: currentNumber + 2,
         lastNumber: Math.max(0, nextNumber - 1),
-      });
+      };
+
+      // 🔔 notifications (async, doesn't block response)
+      notifyQueueProgress(org);
+
+      return res.json(out);
     } catch (e) {
       await client.query("ROLLBACK");
       throw e;
@@ -802,6 +912,8 @@ app.post("/api/admin/next", requireAdmin, async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
+
 
 // ADMIN: reset
 app.post("/api/admin/reset", requireAdmin, async (req, res) => {
