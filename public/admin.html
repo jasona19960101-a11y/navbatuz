@@ -61,9 +61,8 @@
     button.warn{border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.12)}
     button:disabled{opacity:.55;cursor:not-allowed}
 
-    .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px}
-    @media (max-width:980px){.kpis{grid-template-columns:repeat(3,1fr)}}
-    @media (max-width:620px){.kpis{grid-template-columns:repeat(2,1fr)}}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    @media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}}
     .kpi{
       padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);
       background:rgba(255,255,255,.05)
@@ -86,7 +85,6 @@
     }
     .pill.ok{border-color:rgba(82,255,168,.35);background:rgba(82,255,168,.10)}
     .pill.warn{border-color:rgba(255,209,102,.35);background:rgba(255,209,102,.10)}
-    .pill.bad{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.10)}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
     .small{font-size:12px;color:rgba(232,238,255,.6)}
     .divider{height:1px;background:rgba(255,255,255,.12);margin:12px 0}
@@ -124,7 +122,7 @@
         <div class="badge">🛠️</div>
         <div>
           <div class="title">NAVBATUZ — Admin Panel</div>
-          <div class="sub">Viloyat → Tuman → Muassasa • Barcha statuslar • Next / Delete / Skip</div>
+          <div class="sub">Viloyat → Tuman → Muassasa • Aktiv navbat • Next / Delete / Skip</div>
         </div>
       </div>
 
@@ -164,8 +162,6 @@
             <option value="all">Status: hammasi</option>
             <option value="waiting">waiting</option>
             <option value="missed">missed</option>
-            <option value="served">served</option>
-            <option value="cancelled">cancelled</option>
           </select>
         </div>
 
@@ -173,17 +169,12 @@
           <div class="kpi"><div class="l">Now serving</div><div class="v" id="kNow">—</div></div>
           <div class="kpi"><div class="l">Last number</div><div class="v" id="kLast">—</div></div>
           <div class="kpi"><div class="l">Avg service</div><div class="v" id="kAvg">—</div></div>
-          <div class="kpi"><div class="l">Jami (total)</div><div class="v" id="kTotal">—</div></div>
-          <div class="kpi"><div class="l">Kutayotgan</div><div class="v" id="kWaiting">—</div></div>
-          <div class="kpi"><div class="l">Xizmat ko‘rsatilgan</div><div class="v" id="kServed">—</div></div>
-        </div>
-
-        <div class="small" style="margin-top:8px">
-          Bekor qilingan: <b id="kCancelled">—</b> • Missed: <b id="kMissed">—</b>
+          <div class="kpi"><div class="l">Aktiv navbat</div><div class="v" id="kCnt">—</div></div>
         </div>
 
         <div id="msg" class="msg"></div>
 
+        <!-- NEXT faqat muassasa tanlangandan keyin -->
         <div class="toolbar" id="orgToolbar" style="display:none">
           <button class="primary" onclick="nextOne()">➡️ NEXT (navbatni chaqirish)</button>
           <span class="small">* Xizmat tugagach bosib, keyingi navbatchini chaqirasiz</span>
@@ -204,7 +195,7 @@
         </table>
 
         <div class="small" style="margin-top:10px">
-          * ETA faqat waiting/missed uchun hisoblanadi: (qolgan navbat soni) × avgServiceSec.
+          * ETA = (qolgan navbat soni) × avgServiceSec. Agar avg topilmasa “—”.
         </div>
       </div>
 
@@ -216,7 +207,7 @@
         <div class="divider"></div>
 
         <div class="row">
-          <button class="warn" onclick="deleteAll()">🧹 Delete ALL (waiting/missed)</button>
+          <button class="warn" onclick="deleteAll()">🧹 Delete ALL</button>
           <button class="danger" onclick="resetOrg()">💣 RESET</button>
         </div>
 
@@ -278,21 +269,24 @@
   }
 
   // -------------------------
-  // Name helpers
+  // Name helpers (IMPORTANT)
   // -------------------------
   function pickName(o){
     if (!o) return "";
+    // org.name can be {uz,ru,en}
     if (typeof o.name === "object" && o.name) return o.name.uz || o.name.ru || o.name.en || "";
     return o.name_uz || o.nameUz || o.name || o.title || o.label || "";
   }
+
   function regionName(r){ return pickName(r) || String(r.id ?? ""); }
   function districtName(d){ return pickName(d) || String(d.id ?? ""); }
+
   function districtRegionId(d){
     return d.region_id ?? d.regionId ?? d.parent_id ?? d.parentId ?? d.region ?? null;
   }
 
   // -------------------------
-  // GEO load
+  // GEO load (your structure)
   // -------------------------
   async function loadGeo(){
     const r = await fetch("/api/geo");
@@ -307,6 +301,7 @@
       throw new Error("geo.json ichida sources.regions yoki sources.districts yo‘q");
     }
 
+    // fetch real regions/districts list
     const [rg, ds] = await Promise.all([
       fetch(srcRegions).then(x => x.json()),
       fetch(srcDistricts).then(x => x.json()),
@@ -315,8 +310,8 @@
     REGIONS = Array.isArray(rg) ? rg : [];
     DISTRICTS = Array.isArray(ds) ? ds : [];
 
-    if (!REGIONS.length) throw new Error("regions list bo‘sh");
-    if (!DISTRICTS.length) throw new Error("districts list bo‘sh");
+    if (!REGIONS.length) throw new Error("regions list bo‘sh (sources.regions dan)");
+    if (!DISTRICTS.length) throw new Error("districts list bo‘sh (sources.districts dan)");
   }
 
   // -------------------------
@@ -361,11 +356,12 @@
     const rName = regionName(rObj);
     const dName = districtName(dObj);
 
+    // YOUR mapping key: "Viloyat|Tuman"
     const k = `${rName}|${dName}`;
     ORG_LIST = (ORGS_BY_KEY[k] || []).slice();
 
     if (!ORG_LIST.length){
-      setMsg("warn", `Bu joy uchun muassasa topilmadi: "${k}" (geo.json orgsByUnitUzKey tekshir).`);
+      setMsg("warn", `Bu joy uchun muassasa topilmadi: "${k}" (orgsByUnitUzKey tekshir).`);
       return;
     }
 
@@ -407,6 +403,7 @@
   function filterOrgList(){
     const q = ($("orgSearch").value || "").trim().toLowerCase();
     if (!ORG_LIST.length) return;
+
     const filtered = !q ? ORG_LIST : ORG_LIST.filter(o => (pickName(o) || "").toLowerCase().includes(q));
     renderOrgList(filtered);
   }
@@ -431,9 +428,7 @@
   // -------------------------
   function clearTable(){
     $("tbody").innerHTML = `<tr><td colspan="6" class="small">Muassasa tanlang...</td></tr>`;
-    $("kNow").textContent="—"; $("kLast").textContent="—"; $("kAvg").textContent="—";
-    $("kTotal").textContent="—"; $("kWaiting").textContent="—"; $("kServed").textContent="—";
-    $("kCancelled").textContent="—"; $("kMissed").textContent="—";
+    $("kNow").textContent="—"; $("kLast").textContent="—"; $("kAvg").textContent="—"; $("kCnt").textContent="—";
     lastData = null;
   }
 
@@ -441,21 +436,21 @@
     $("kNow").textContent  = data?.nowServing ?? "—";
     $("kLast").textContent = data?.lastNumber ?? "—";
     $("kAvg").textContent  = (data?.avgServiceSec ? (Math.round(data.avgServiceSec/60) + " min") : "—");
-
-    const c = data?.counts || {};
-    $("kTotal").textContent = (c.total ?? 0);
-    $("kWaiting").textContent = (c.waiting ?? 0);
-    $("kServed").textContent = (c.served ?? 0);
-    $("kCancelled").textContent = (c.cancelled ?? 0);
-    $("kMissed").textContent = (c.missed ?? 0);
+    $("kCnt").textContent  = (data?.tickets?.length ?? 0);
   }
 
   function statusPill(s){
     if (s === "waiting") return `<span class="pill ok">waiting</span>`;
     if (s === "missed") return `<span class="pill warn">missed</span>`;
-    if (s === "served") return `<span class="pill ok">served</span>`;
-    if (s === "cancelled") return `<span class="pill bad">cancelled</span>`;
     return `<span class="pill">${esc(s)}</span>`;
+  }
+
+  function etaText(t, nowServing, avgServiceSec){
+    const num = Number(t.number || 0);
+    if (!avgServiceSec) return "—";
+    const remaining = Math.max(0, num - Number(nowServing || 0));
+    const minutes = Math.max(0, Math.round((remaining * avgServiceSec) / 60));
+    return minutes + " min";
   }
 
   function createdText(t){
@@ -463,16 +458,13 @@
     catch{ return t.createdAt || ""; }
   }
 
-  function etaText(t){
-    if (t.status !== "waiting" && t.status !== "missed") return "—";
-    if (t.etaMinutes === null || t.etaMinutes === undefined) return "—";
-    return `${t.etaMinutes} min`;
-  }
-
   function renderTable(){
     const tb = $("tbody");
     const q = ($("search").value || "").trim().toLowerCase();
     const sf = $("statusFilter").value;
+
+    const nowServing = lastData?.nowServing ?? 0;
+    const avg = lastData?.avgServiceSec ?? null;
 
     const list = (lastData?.tickets || []).filter(t => {
       if (sf !== "all" && (t.status !== sf)) return false;
@@ -484,17 +476,13 @@
     });
 
     if (!list.length){
-      tb.innerHTML = `<tr><td colspan="6" class="small">Ro‘yxat bo‘sh (filter/search bilan ham topilmadi).</td></tr>`;
+      tb.innerHTML = `<tr><td colspan="6" class="small">Aktiv navbat topilmadi.</td></tr>`;
       return;
     }
 
     tb.innerHTML = list.map(t => {
+      const eta = etaText(t, nowServing, avg);
       const ct = createdText(t);
-      const eta = etaText(t);
-
-      const canSkip = (t.status === "waiting");
-      const canDelete = (t.status === "waiting" || t.status === "missed");
-
       return `
         <tr>
           <td><span class="pill">#${esc(t.number)}</span></td>
@@ -503,8 +491,8 @@
           <td class="small">${esc(ct)}</td>
           <td>${statusPill(t.status)}</td>
           <td>
-            <button class="btnMini danger" ${canDelete ? "" : "disabled"} onclick="deleteTicket('${esc(t.id)}')">Delete</button>
-            <button class="btnMini warn" ${canSkip ? "" : "disabled"} onclick="skipTicket('${esc(t.id)}')">Skip</button>
+            <button class="btnMini danger" onclick="deleteTicket('${esc(t.id)}')">Delete</button>
+            <button class="btnMini warn" onclick="skipTicket('${esc(t.id)}')">Skip</button>
           </td>
         </tr>
       `;
@@ -522,7 +510,7 @@
       lastData = data;
       updateKPIs(data);
       renderTable();
-      setMsg("ok", `Yangilandi. Jami: ${(data.counts?.total ?? 0)} ta, waiting: ${(data.counts?.waiting ?? 0)} ta`);
+      setMsg("ok", `Yangilandi. Aktiv navbat: ${(data.tickets||[]).length}`);
     }catch(e){
       setMsg("bad", e.message);
     }finally{
@@ -563,7 +551,7 @@
     const orgId = selectedOrgId();
     if (!orgId) return setMsg("warn","Muassasa tanlang");
     if (!key()) return setMsg("bad","ADMIN_KEY kiriting");
-    if (!confirm("O‘tkazib yuboramizmi? (waiting -> missed)")) return;
+    if (!confirm("O‘tkazib yuboramizmi? (missed)")) return;
 
     try{
       await api(`/api/admin/skip`, { method:"POST", body: JSON.stringify({ orgId, ticketId }) });
@@ -640,6 +628,7 @@
       clearTable();
     }
   }
+
   init();
 </script>
 </body>
