@@ -33,12 +33,11 @@
     }
     .title{font-weight:900;letter-spacing:.6px;font-size:18px}
     .sub{color:var(--muted);font-size:13px;margin-top:2px}
-
     .grid{display:grid;grid-template-columns:1.35fr .65fr;gap:14px}
     @media (max-width:980px){.grid{grid-template-columns:1fr}}
-
     .card{background:var(--card);border:1px solid var(--b);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
     input,select{
       background:rgba(255,255,255,.06);color:var(--t);
       border:1px solid var(--b);border-radius:12px;padding:10px 12px;outline:none;
@@ -91,6 +90,28 @@
     .divider{height:1px;background:rgba(255,255,255,.12);margin:12px 0}
     .btnMini{padding:7px 10px;border-radius:10px;font-size:12px}
     .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+    /* Searchable org dropdown */
+    .dropWrap{position:relative;min-width:260px;flex:1}
+    .dropList{
+      position:absolute; left:0; right:0; top:44px;
+      background:rgba(10,16,32,.95);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:14px;
+      box-shadow:0 20px 50px rgba(0,0,0,.45);
+      max-height:280px;
+      overflow:auto;
+      z-index:999;
+      display:none;
+    }
+    .dropItem{
+      padding:10px 12px;
+      cursor:pointer;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      color:rgba(232,238,255,.9);
+    }
+    .dropItem:hover{background:rgba(255,255,255,.06)}
   </style>
 </head>
 <body>
@@ -125,9 +146,14 @@
             <option value="">Tuman tanlang...</option>
           </select>
 
-          <select id="selOrg" onchange="onOrgChange()">
-            <option value="">Muassasa tanlang...</option>
-          </select>
+          <!-- MUASSASA: searchable -->
+          <div class="dropWrap">
+            <input id="orgSearch" placeholder="Muassasa qidiring / tanlang..." oninput="filterOrgList()" onclick="openOrgList()" />
+            <div id="orgList" class="dropList"></div>
+          </div>
+
+          <!-- hidden real orgId -->
+          <input id="orgIdHidden" type="hidden" />
 
           <input id="adminKey" class="wide" placeholder="ADMIN_KEY (Render env dagi)" />
         </div>
@@ -142,30 +168,18 @@
         </div>
 
         <div class="kpis">
-          <div class="kpi">
-            <div class="l">Now serving</div>
-            <div class="v" id="kNow">—</div>
-          </div>
-          <div class="kpi">
-            <div class="l">Last number</div>
-            <div class="v" id="kLast">—</div>
-          </div>
-          <div class="kpi">
-            <div class="l">Avg service</div>
-            <div class="v" id="kAvg">—</div>
-          </div>
-          <div class="kpi">
-            <div class="l">Aktiv navbat</div>
-            <div class="v" id="kCnt">—</div>
-          </div>
+          <div class="kpi"><div class="l">Now serving</div><div class="v" id="kNow">—</div></div>
+          <div class="kpi"><div class="l">Last number</div><div class="v" id="kLast">—</div></div>
+          <div class="kpi"><div class="l">Avg service</div><div class="v" id="kAvg">—</div></div>
+          <div class="kpi"><div class="l">Aktiv navbat</div><div class="v" id="kCnt">—</div></div>
         </div>
 
         <div id="msg" class="msg"></div>
 
-        <!-- NEXT tugma faqat muassasa tanlangandan keyin ko'rinadi -->
+        <!-- NEXT faqat muassasa tanlangandan keyin -->
         <div class="toolbar" id="orgToolbar" style="display:none">
           <button class="primary" onclick="nextOne()">➡️ NEXT (navbatni chaqirish)</button>
-          <span class="small">* Xizmat tugagach shu tugmani bosib keyingi navbatchini chaqirasiz</span>
+          <span class="small">* Xizmat tugagach bosib, keyingi navbatchini chaqirasiz</span>
         </div>
 
         <table>
@@ -226,7 +240,15 @@
 
 <script>
   let GEO = null;
+
+  // normalized
+  let REGIONS = [];
+  let DISTRICTS = [];
+  let ORGS_BY_UNIT = {}; // orgsByUnitId
+
+  let ORG_LIST = []; // current district orgs (array)
   let lastData = null;
+
   let autoTimer = null;
   let autoOn = false;
 
@@ -250,96 +272,202 @@
     return data;
   }
 
-  // -------- GEO helpers (moslashuvchan) --------
-  function getRegions(){ return GEO?.regions || GEO?.viloyatlar || []; }
-  function getDistricts(){ return GEO?.districts || GEO?.tumanlar || GEO?.units || []; }
+  // --------------------------
+  // GEO detect / normalize
+  // --------------------------
+  function isObj(x){ return x && typeof x === "object" && !Array.isArray(x); }
 
-  function regionName(r){ return r.name_uz || r.nameUz || r.name || r.title || String(r.id); }
-  function districtName(d){ return d.name_uz || d.nameUz || d.name || d.title || String(d.id); }
-  function orgName(o){ return o.name_uz || o.nameUz || o.name || o.title || String(o.id); }
+  function hasAnyName(o){
+    return !!(o && (o.name_uz || o.nameUz || o.name || o.title || o.label));
+  }
 
+  // recursive find first array of objects that contain id and name-ish
+  function findArrayByHeuristic(root, mode){
+    const seen = new Set();
+    function walk(node){
+      if (!node || typeof node !== "object") return null;
+      if (seen.has(node)) return null;
+      seen.add(node);
+
+      if (Array.isArray(node) && node.length){
+        const sample = node[0];
+        if (isObj(sample) && ("id" in sample)){
+          if (mode === "regions"){
+            if (hasAnyName(sample) && !("region_id" in sample) && !("regionId" in sample)) return node;
+          }
+          if (mode === "districts"){
+            if (("region_id" in sample) || ("regionId" in sample) || ("parent_id" in sample) || ("parentId" in sample)) return node;
+          }
+        }
+      }
+
+      if (Array.isArray(node)){
+        for (const it of node){
+          const found = walk(it);
+          if (found) return found;
+        }
+      } else {
+        for (const k of Object.keys(node)){
+          const found = walk(node[k]);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    return walk(root);
+  }
+
+  function normalizeGeo(geo){
+    // 1) regions
+    REGIONS = geo.regions || geo.viloyatlar || geo.region || [];
+    if (!Array.isArray(REGIONS) || !REGIONS.length){
+      REGIONS = findArrayByHeuristic(geo, "regions") || [];
+    }
+
+    // 2) districts/units
+    DISTRICTS = geo.districts || geo.tumanlar || geo.units || geo.district || [];
+    if (!Array.isArray(DISTRICTS) || !DISTRICTS.length){
+      DISTRICTS = findArrayByHeuristic(geo, "districts") || [];
+    }
+
+    // 3) org mapping
+    ORGS_BY_UNIT = geo.orgsByUnitId || geo.orgsByUnitUZ || {};
+    if (!isObj(ORGS_BY_UNIT) || !Object.keys(ORGS_BY_UNIT).length){
+      // fallback (senda oldin ham bor edi)
+      ORGS_BY_UNIT = {};
+      const m = geo.orgsByUnitUzKey || {};
+      if (isObj(m)){
+        // try to transform: key contains unitId -> set ORGS_BY_UNIT[unitId]=...
+        // (best effort)
+        for (const k of Object.keys(m)){
+          const list = m[k] || [];
+          // extract number-like id from key, last digits
+          const mm = String(k).match(/(\d+)\D*$/);
+          const unitId = mm ? mm[1] : k;
+          ORGS_BY_UNIT[String(unitId)] = list;
+        }
+      }
+    }
+  }
+
+  function nameOf(o){
+    return o?.name_uz || o?.nameUz || o?.name || o?.title || o?.label || String(o?.id ?? "");
+  }
   function districtRegionId(d){
     return d.region_id ?? d.regionId ?? d.parent_id ?? d.parentId ?? d.region ?? null;
   }
 
-  function getOrgsByUnitId(unitId){
-    // asosiy mapping (senda bor)
-    if (GEO?.orgsByUnitId) return GEO.orgsByUnitId[String(unitId)] || [];
-
-    // fallback mapping (eski validateOrgId shu bilan ishlaydi)
-    if (GEO?.orgsByUnitUzKey){
-      const m = GEO.orgsByUnitUzKey;
-      for (const k of Object.keys(m)){
-        if (k.includes(String(unitId))) return m[k] || [];
-      }
-    }
-    return [];
-  }
-
-  function selectedRegionId(){ return ($("selRegion").value || "").trim(); }
-  function selectedDistrictId(){ return ($("selDistrict").value || "").trim(); }
-  function selectedOrgId(){ return ($("selOrg").value || "").trim(); }
-
-  async function init(){
-    try{
-      const r = await fetch("/api/geo");
-      GEO = await r.json();
-      fillRegions();
-      setMsg("warn","Viloyat → Tuman → Muassasa tanlang, ADMIN_KEY kiriting.");
-    }catch(e){
-      setMsg("bad","/api/geo yuklanmadi: " + e.message);
-    }
-  }
-
+  // --------------------------
+  // Select fill
+  // --------------------------
   function fillRegions(){
     const sel = $("selRegion");
     sel.innerHTML = `<option value="">Viloyat tanlang...</option>`;
-    for (const r of getRegions()){
-      sel.innerHTML += `<option value="${esc(r.id)}">${esc(regionName(r))}</option>`;
+    for (const r of REGIONS){
+      sel.innerHTML += `<option value="${esc(r.id)}">${esc(nameOf(r))}</option>`;
     }
     $("selDistrict").innerHTML = `<option value="">Tuman tanlang...</option>`;
-    $("selOrg").innerHTML = `<option value="">Muassasa tanlang...</option>`;
-    $("orgToolbar").style.display = "none";
+    resetOrgPicker();
   }
 
   function onRegionChange(){
-    const rid = selectedRegionId();
-    const selD = $("selDistrict");
-    selD.innerHTML = `<option value="">Tuman tanlang...</option>`;
-    $("selOrg").innerHTML = `<option value="">Muassasa tanlang...</option>`;
-    $("orgToolbar").style.display = "none";
+    const rid = ($("selRegion").value || "").trim();
+    $("selDistrict").innerHTML = `<option value="">Tuman tanlang...</option>`;
+    resetOrgPicker();
     clearTable();
 
     if (!rid) return;
 
-    const dlist = getDistricts().filter(d => String(districtRegionId(d)) === String(rid));
-    for (const d of dlist){
-      selD.innerHTML += `<option value="${esc(d.id)}">${esc(districtName(d))}</option>`;
+    const list = DISTRICTS.filter(d => String(districtRegionId(d)) === String(rid));
+    for (const d of list){
+      $("selDistrict").innerHTML += `<option value="${esc(d.id)}">${esc(nameOf(d))}</option>`;
     }
   }
 
   function onDistrictChange(){
-    const did = selectedDistrictId();
-    const selO = $("selOrg");
-    selO.innerHTML = `<option value="">Muassasa tanlang...</option>`;
-    $("orgToolbar").style.display = "none";
+    const did = ($("selDistrict").value || "").trim();
+    resetOrgPicker();
     clearTable();
-
     if (!did) return;
 
-    // unitId = district id (senda Chinaz=160 kabi)
-    const orgs = getOrgsByUnitId(did);
-    for (const o of orgs){
-      selO.innerHTML += `<option value="${esc(o.id)}">${esc(orgName(o))}</option>`;
+    ORG_LIST = (ORGS_BY_UNIT[String(did)] || []).slice();
+    if (!ORG_LIST.length){
+      setMsg("warn", "Bu tuman uchun muassasalar topilmadi (geo.json mapping tekshir).");
+      return;
     }
+
+    // show searchable dropdown list
+    renderOrgList(ORG_LIST);
+    setMsg("ok", `Muassasa tanlang (topildi: ${ORG_LIST.length} ta)`);
   }
 
-  function onOrgChange(){
-    const oid = selectedOrgId();
-    $("orgToolbar").style.display = oid ? "flex" : "none";
+  // --------------------------
+  // Searchable org dropdown
+  // --------------------------
+  function resetOrgPicker(){
+    ORG_LIST = [];
+    $("orgSearch").value = "";
+    $("orgIdHidden").value = "";
+    $("orgList").style.display = "none";
+    $("orgToolbar").style.display = "none";
+  }
+
+  function openOrgList(){
+    if (!ORG_LIST.length) return;
+    $("orgList").style.display = "block";
+  }
+
+  function closeOrgList(){
+    $("orgList").style.display = "none";
+  }
+
+  function renderOrgList(list){
+    const box = $("orgList");
+    box.innerHTML = "";
+    // top 200 for UI performance (search with filter anyway)
+    const show = list.slice(0, 500);
+    for (const o of show){
+      const item = document.createElement("div");
+      item.className = "dropItem";
+      item.textContent = nameOf(o);
+      item.onclick = () => selectOrg(o);
+      box.appendChild(item);
+    }
+    box.style.display = "block";
+  }
+
+  function filterOrgList(){
+    const q = ($("orgSearch").value || "").trim().toLowerCase();
+    if (!ORG_LIST.length) return;
+
+    const filtered = !q
+      ? ORG_LIST
+      : ORG_LIST.filter(o => nameOf(o).toLowerCase().includes(q));
+
+    renderOrgList(filtered);
+  }
+
+  function selectOrg(o){
+    $("orgSearch").value = nameOf(o);
+    $("orgIdHidden").value = String(o.id);
+    closeOrgList();
+    $("orgToolbar").style.display = "flex";
     loadQueue();
   }
 
+  // close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    const wrap = e.target.closest(".dropWrap");
+    if (!wrap) closeOrgList();
+  });
+
+  function selectedOrgId(){
+    return ($("orgIdHidden").value || "").trim();
+  }
+
+  // --------------------------
+  // Queue table
+  // --------------------------
   function clearTable(){
     $("tbody").innerHTML = `<tr><td colspan="6" class="small">Muassasa tanlang...</td></tr>`;
     $("kNow").textContent="—"; $("kLast").textContent="—"; $("kAvg").textContent="—"; $("kCnt").textContent="—";
@@ -432,7 +560,7 @@
     }
   }
 
-  // --- Actions ---
+  // Actions
   async function nextOne(){
     const orgId = selectedOrgId();
     if (!orgId) return setMsg("warn","Muassasa tanlang");
@@ -506,7 +634,7 @@
     }
   }
 
-  // --- Auto refresh ---
+  // Auto refresh
   function toggleAuto(){
     autoOn = !autoOn;
     if (autoOn) applyAutoInterval(true);
@@ -530,20 +658,29 @@
     loadQueue();
   }
 
-  // right panel select (hidden) – keep compatibility
-  // (we keep autoEvery default without UI clutter)
-  (function ensureAutoSelect(){
-    if (!$("autoEvery")){
-      const s = document.createElement("select");
-      s.id="autoEvery";
-      s.style.display="none";
-      s.innerHTML = `<option value="0">OFF</option><option value="10" selected>10s</option>`;
-      document.body.appendChild(s);
+  // boot
+  async function init(){
+    try{
+      const r = await fetch("/api/geo");
+      GEO = await r.json();
+      normalizeGeo(GEO);
+
+      // if still empty, show debug
+      if (!REGIONS.length){
+        setMsg("bad", "geo.json’dan viloyatlar topilmadi. geo.json structure nomlarini moslab berish kerak.");
+      } else {
+        setMsg("warn", "Viloyat → Tuman tanlang, keyin muassasa qidirib tanlang. ADMIN_KEY kiriting.");
+      }
+
+      fillRegions();
+      clearTable();
+    }catch(e){
+      setMsg("bad","/api/geo yuklanmadi: " + e.message);
+      clearTable();
     }
-  })();
+  }
 
   init();
-  clearTable();
 </script>
 </body>
 </html>
