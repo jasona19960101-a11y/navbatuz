@@ -995,11 +995,13 @@
     $("takeBtn").disabled = true;
 
   async function fetchTicketStatus(){
-    if (!ticket || ticket.status !== "active") return;
-    const data = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
-    setOnlineBadge(true);
-    renderTicketStatus(data);
-  }
+  if (!ticket || !ticket.number || ticket.status !== "active") return;
+
+  const data = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
+  setOnlineBadge(true);
+  renderTicketStatus(data);
+}
+
 
   async function takeTicket(){
     const t = getT(state.lang);
@@ -1250,5 +1252,6 @@
 </script>
 </body>
 </html>
+
 
 
