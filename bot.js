@@ -38,6 +38,7 @@ export function startBot({
   const PUBLIC_BASE = publicUrl;
 
   const bot = new Telegraf(BOT_TOKEN);
+  let __launched = false;
   __botRef = bot;
 
   // oddiy in-memory session (Render restart bo‘lsa ketadi — bu navbat raqamiga ta’sir qilmaydi)
@@ -435,10 +436,10 @@ export function startBot({
     } catch {}
 
     await bot.launch();
+    __launched = true;
     console.log("✅ Bot polling mode. PUBLIC:", PUBLIC_BASE);
   })();
-process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
-
-  return bot;
+process.once("SIGINT", () => { if (__launched) { try { bot.stop("SIGINT"); } catch {} } });
+  process.once("SIGTERM", () => { if (__launched) { try { bot.stop("SIGTERM"); } catch {} } });
+return bot;
 }
