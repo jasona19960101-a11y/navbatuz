@@ -403,3 +403,6 @@ process.once("SIGTERM", () => {
     console.log("Bot already stopped (SIGTERM)");
   }
 });
+  return bot;
+}
+
