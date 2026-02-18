@@ -951,7 +951,6 @@ app.get("*", (req, res) => {
 
     // Telegram bot (agar BOT_TOKEN berilgan bo'lsa) — bitta DB va bitta /api/take orqali ishlaydi.
     startBot({
-      app,
       port: PORT,
       publicUrl: publicBaseUrl(),
     });
