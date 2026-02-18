@@ -192,6 +192,22 @@ async function makeQr(ticketId) {
   return { qrData, qrPngBase64 };
 }
 
+// =======================
+// ADMIN AUTH (required)
+// =======================
+function requireAdmin(req, res, next) {
+  const key = (req.headers["x-admin-key"] || "").toString();
+  const expected = (process.env.ADMIN_KEY || "").toString();
+
+  if (!expected) {
+    return res.status(500).json({ ok: false, error: "ADMIN_KEY env sozlanmagan" });
+  }
+  if (!key || key !== expected) {
+    return res.status(401).json({ ok: false, error: "Admin ruxsat yo‘q (X-Admin-Key xato)" });
+  }
+  next();
+}
+
 // ===== ROUTES =====
 
 app.get("/api/health", async (req, res) => {
@@ -564,9 +580,115 @@ app.post("/api/ticket/served", async (req, res) => {
   }
 });
 
+// =======================
+// ADMIN: queue snapshot
+// GET /api/admin/queue?orgId=xxx
+// =======================
+app.get("/api/admin/queue", requireAdmin, async (req, res) => {
+  try {
+    const orgId = safeStr(req.query.orgId, "").trim();
+    if (!orgId) return res.status(400).json({ ok: false, error: "orgId kerak" });
+
+    await ensureOrgState(orgId);
+
+    const st = await pool.query(
+      `SELECT current_number, next_number FROM org_state WHERE org_id=$1`,
+      [orgId]
+    );
+
+    const currentNumber = safeInt(st.rows[0]?.current_number, 0);
+    const nextNumber = safeInt(st.rows[0]?.next_number, 1);
+
+    const nowServing = currentNumber + 1;
+    const lastNumber = Math.max(0, nextNumber - 1);
+    const avgServiceSec = await computeAvgServiceSec(orgId);
+
+    const t = await pool.query(
+      `SELECT id, org_id, number, status, created_at, full_name
+       FROM tickets
+       WHERE org_id=$1 AND status IN ('waiting','missed')
+       ORDER BY number ASC
+       LIMIT 500`,
+      [orgId]
+    );
+
+    return res.json({
+      ok: true,
+      orgId,
+      nowServing,
+      lastNumber,
+      avgServiceSec: avgServiceSec ?? null,
+      tickets: t.rows.map(r => ({
+        id: String(r.id),
+        orgId: r.org_id,
+        number: safeInt(r.number, 0),
+        status: r.status,
+        createdAt: r.created_at,
+        fullName: r.full_name
+      }))
+    });
+  } catch (e) {
+    console.error("GET /api/admin/queue error:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// =======================
+// ADMIN: delete one ticket (cancel)
+// POST /api/admin/delete { ticketId }
+// =======================
+app.post("/api/admin/delete", requireAdmin, async (req, res) => {
+  try {
+    const { ticketId } = req.body || {};
+    const id = safeStr(ticketId, "").trim();
+    if (!id) return res.status(400).json({ ok: false, error: "ticketId kerak" });
+
+    const r = await pool.query(
+      `UPDATE tickets
+       SET status='cancelled', updated_at=now()
+       WHERE id=$1 AND status IN ('waiting','missed')
+       RETURNING id, org_id, number, status`,
+      [id]
+    );
+
+    if (!r.rowCount) {
+      return res.json({ ok: true, changed: false, note: "ticket topilmadi yoki status mos emas" });
+    }
+
+    return res.json({ ok: true, changed: true, ticket: r.rows[0] });
+  } catch (e) {
+    console.error("POST /api/admin/delete error:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// =======================
+// ADMIN: delete ALL waiting/missed for org (cancel)
+// POST /api/admin/deleteAll { orgId }
+// =======================
+app.post("/api/admin/deleteAll", requireAdmin, async (req, res) => {
+  try {
+    const { orgId } = req.body || {};
+    const org = safeStr(orgId, "").trim();
+    if (!org) return res.status(400).json({ ok: false, error: "orgId kerak" });
+
+    const r = await pool.query(
+      `UPDATE tickets
+       SET status='cancelled', updated_at=now()
+       WHERE org_id=$1 AND status IN ('waiting','missed')`,
+      [org]
+    );
+
+    return res.json({ ok: true, cancelledCount: r.rowCount || 0 });
+  } catch (e) {
+    console.error("POST /api/admin/deleteAll error:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
 // ADMIN: next (org_state current_number++)
 // (admin panelingiz bo‘lsa ishlatasiz)
-app.post("/api/admin/next", async (req, res) => {
+app.post("/api/admin/next", requireAdmin, async (req, res) => {
   try {
     const { orgId } = req.body || {};
     const org = safeStr(orgId, "").trim();
@@ -616,7 +738,7 @@ app.post("/api/admin/next", async (req, res) => {
 });
 
 // ADMIN: reset org (danger)
-app.post("/api/admin/reset", async (req, res) => {
+app.post("/api/admin/reset", requireAdmin, async (req, res) => {
   try {
     const { orgId } = req.body || {};
     const org = safeStr(orgId, "").trim();
