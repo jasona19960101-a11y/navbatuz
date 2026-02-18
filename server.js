@@ -18,12 +18,11 @@ if (!DATABASE_URL) {
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false }
+  ssl: process.env.PGSSLMODE === "disable" ? false : { rejectUnauthorized: false },
 });
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
-
 app.use(express.static(path.join(__dirname, "public")));
 
 const GEO_PATH = path.join(__dirname, "public", "geo.json");
@@ -42,6 +41,13 @@ function safeStr(s, def = "") {
   return typeof s === "string" ? s : def;
 }
 
+function normFullName(s) {
+  const x = safeStr(s, "").trim().replace(/\s+/g, " ");
+  if (!x) return "";
+  // juda uzun bo'lib ketmasin
+  return x.slice(0, 80);
+}
+
 function validateOrgId(geo, orgId) {
   if (!orgId || typeof orgId !== "string") return false;
   const map = geo.orgsByUnitUzKey || {};
@@ -52,6 +58,23 @@ function validateOrgId(geo, orgId) {
     }
   }
   return false;
+}
+
+function getPublicBase() {
+  return process.env.PUBLIC_URL || `http://localhost:${PORT}`;
+}
+
+async function buildQrForTicket(ticketId) {
+  const publicBase = getPublicBase();
+  const qrData = `${publicBase}/ticket.html?id=${ticketId}`;
+  let qrPngBase64 = null;
+  try {
+    qrPngBase64 = await QRCode.toDataURL(qrData);
+  } catch (e) {
+    console.error("QRCode error:", e?.message || e);
+    qrPngBase64 = null;
+  }
+  return { qrData, qrPngBase64 };
 }
 
 async function initDb() {
@@ -101,6 +124,7 @@ async function initDb() {
       status TEXT NOT NULL DEFAULT 'waiting',
       platform TEXT,
       user_id TEXT,
+      full_name TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       served_at TIMESTAMPTZ
@@ -136,6 +160,10 @@ async function initDb() {
         ALTER TABLE tickets ADD COLUMN user_id TEXT;
       END IF;
 
+      IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='full_name') THEN
+        ALTER TABLE tickets ADD COLUMN full_name TEXT;
+      END IF;
+
       IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='created_at') THEN
         ALTER TABLE tickets ADD COLUMN created_at TIMESTAMPTZ NOT NULL DEFAULT now();
       END IF;
@@ -150,39 +178,21 @@ async function initDb() {
     END $$;
   `);
 
-  // ✅ ✅ ✅ CRITICAL FIX #1: eski DB'da tickets.name NOT NULL bo'lsa /api/take 500 bo'ladi.
-  // Biz name ustunini nullable qilamiz (agar ustun bo'lsa).
+  // eski DB: name/phone NOT NULL bo'lsa 500 bo'lmasin
   await pool.query(`
     DO $$
     BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_name='tickets' AND column_name='name'
-      ) THEN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='name') THEN
         BEGIN
           ALTER TABLE tickets ALTER COLUMN name DROP NOT NULL;
-        EXCEPTION WHEN others THEN
-          NULL;
+        EXCEPTION WHEN others THEN NULL;
         END;
       END IF;
-    END $$;
-  `);
 
-  // ✅ ✅ ✅ CRITICAL FIX #2: sizdagi hozirgi xato — tickets.phone NOT NULL
-  // Biz phone ustunini ham nullable qilamiz (agar ustun bo'lsa).
-  await pool.query(`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_name='tickets' AND column_name='phone'
-      ) THEN
+      IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tickets' AND column_name='phone') THEN
         BEGIN
           ALTER TABLE tickets ALTER COLUMN phone DROP NOT NULL;
-        EXCEPTION WHEN others THEN
-          NULL;
+        EXCEPTION WHEN others THEN NULL;
         END;
       END IF;
     END $$;
@@ -218,7 +228,6 @@ async function computeAvgServiceSec(orgId) {
       if (d > 5 && d < 21600) diffsSec.push(d);
       if (diffsSec.length >= 4) break;
     }
-
     if (diffsSec.length < 3) return null;
 
     return Math.round(diffsSec.reduce((a, b) => a + b, 0) / diffsSec.length);
@@ -236,8 +245,8 @@ async function ensureOrgState(orgId) {
   );
 }
 
-async function autoUpdateTicketStatusIfNeeded({ ticketId, orgId, number, nowServing }) {
-  if (!ticketId || !orgId || !number || !Number.isFinite(nowServing)) return null;
+async function autoUpdateTicketStatusIfNeeded({ ticketId, number, nowServing }) {
+  if (!ticketId || !number || !Number.isFinite(nowServing)) return null;
 
   const diff = nowServing - number;
   if (diff <= 0) return null;
@@ -274,13 +283,15 @@ app.get("/api/geo", (req, res) => {
 
 app.post("/api/take", async (req, res) => {
   try {
-    const { orgId, platform = "web", userId = null } = req.body || {};
+    const { orgId, platform = "web", userId = null, fullName = "" } = req.body || {};
     const geo = loadGeo();
 
     const org = safeStr(orgId, "").trim();
     if (!validateOrgId(geo, org)) {
       return res.status(400).json({ ok: false, error: "Noto‘g‘ri orgId (geo.json’dan topilmadi)" });
     }
+
+    const fName = normFullName(fullName);
 
     const client = await pool.connect();
     try {
@@ -301,10 +312,10 @@ app.post("/api/take", async (req, res) => {
       const currentNumber = safeInt(st.rows[0]?.current_number, 0);
 
       const t = await client.query(
-        `INSERT INTO tickets (org_id, number, platform, user_id)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, org_id, number, status, created_at`,
-        [org, nextNumber, platform, userId]
+        `INSERT INTO tickets (org_id, number, platform, user_id, full_name)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, org_id, number, status, created_at, full_name`,
+        [org, nextNumber, platform, userId, fName || null]
       );
 
       await client.query(
@@ -320,16 +331,7 @@ app.post("/api/take", async (req, res) => {
       const lastNumber = nextNumber;
       const avgServiceSec = await computeAvgServiceSec(org);
 
-      const publicBase = process.env.PUBLIC_URL || `http://localhost:${PORT}`;
-      const qrData = `${publicBase}/ticket.html?id=${ticket.id}`;
-
-      let qrPngBase64 = null;
-      try {
-        qrPngBase64 = await QRCode.toDataURL(qrData);
-      } catch (e) {
-        console.error("QRCode error:", e?.message || e);
-        qrPngBase64 = null;
-      }
+      const { qrData, qrPngBase64 } = await buildQrForTicket(ticket.id);
 
       return res.json({
         ok: true,
@@ -347,11 +349,12 @@ app.post("/api/take", async (req, res) => {
           currentNumber,
           remaining: Math.max(0, ticket.number - nowServing),
           etaMinutes: avgServiceSec ? Math.round((Math.max(0, ticket.number - nowServing) * avgServiceSec) / 60) : null,
+          fullName: ticket.full_name || null,
           qrData,
           qrPngBase64,
           platform,
-          userId
-        }
+          userId,
+        },
       });
     } catch (err) {
       await client.query("ROLLBACK");
@@ -364,7 +367,7 @@ app.post("/api/take", async (req, res) => {
     res.status(500).json({
       ok: false,
       error: e.message || "Server error",
-      hint: "DATABASE_URL va DB ulanishini tekshiring. Render logs'ni ko'ring."
+      hint: "DATABASE_URL va DB ulanishini tekshiring. Render logs'ni ko'ring.",
     });
   }
 });
@@ -394,7 +397,7 @@ app.get("/api/ticket", async (req, res) => {
 
     if (number) {
       const t = await pool.query(
-        `SELECT id, org_id, number, status, created_at, updated_at
+        `SELECT id, org_id, number, status, created_at, updated_at, full_name
          FROM tickets WHERE org_id=$1 AND number=$2
          ORDER BY created_at DESC
          LIMIT 1`,
@@ -406,13 +409,12 @@ app.get("/api/ticket", async (req, res) => {
 
         await autoUpdateTicketStatusIfNeeded({
           ticketId: row.id,
-          orgId: row.org_id,
           number: safeInt(row.number, 0),
-          nowServing
+          nowServing,
         });
 
         const t2 = await pool.query(
-          `SELECT id, org_id, number, status, created_at, updated_at
+          `SELECT id, org_id, number, status, created_at, updated_at, full_name
            FROM tickets WHERE id=$1`,
           [row.id]
         );
@@ -425,9 +427,10 @@ app.get("/api/ticket", async (req, res) => {
           status: row2.status,
           createdAt: row2.created_at,
           updatedAt: row2.updated_at,
+          fullName: row2.full_name || null,
           currentNumber,
           remaining: Math.max(0, number - nowServing),
-          etaMinutes: avgServiceSec ? Math.round((Math.max(0, number - nowServing) * avgServiceSec) / 60) : null
+          etaMinutes: avgServiceSec ? Math.round((Math.max(0, number - nowServing) * avgServiceSec) / 60) : null,
         };
       }
     }
@@ -444,7 +447,7 @@ app.get("/api/ticket/:id", async (req, res) => {
     const id = req.params.id;
 
     const t = await pool.query(
-      `SELECT id, org_id, number, status, created_at, updated_at
+      `SELECT id, org_id, number, status, created_at, updated_at, full_name
        FROM tickets WHERE id=$1`,
       [id]
     );
@@ -468,17 +471,18 @@ app.get("/api/ticket/:id", async (req, res) => {
 
     await autoUpdateTicketStatusIfNeeded({
       ticketId: ticket.id,
-      orgId: ticket.org_id,
       number: safeInt(ticket.number, 0),
-      nowServing
+      nowServing,
     });
 
     const t2 = await pool.query(
-      `SELECT id, org_id, number, status, created_at, updated_at
+      `SELECT id, org_id, number, status, created_at, updated_at, full_name
        FROM tickets WHERE id=$1`,
       [id]
     );
     const ticket2 = t2.rows[0];
+
+    const { qrData, qrPngBase64 } = await buildQrForTicket(ticket2.id);
 
     res.json({
       ok: true,
@@ -487,6 +491,8 @@ app.get("/api/ticket/:id", async (req, res) => {
       nowServing,
       lastNumber,
       avgServiceSec: avgServiceSec ?? null,
+      qrData,
+      qrPngBase64,
       ticket: {
         id: ticket2.id,
         orgId: ticket2.org_id,
@@ -494,12 +500,15 @@ app.get("/api/ticket/:id", async (req, res) => {
         status: ticket2.status,
         createdAt: ticket2.created_at,
         updatedAt: ticket2.updated_at,
+        fullName: ticket2.full_name || null,
         currentNumber,
         remaining: Math.max(0, ticket2.number - nowServing),
         etaMinutes: avgServiceSec
           ? Math.round((Math.max(0, ticket2.number - nowServing) * avgServiceSec) / 60)
-          : null
-      }
+          : null,
+        qrData,
+        qrPngBase64,
+      },
     });
   } catch (e) {
     console.error("GET /api/ticket/:id error:", e);
@@ -529,22 +538,15 @@ app.post("/api/cancel", async (req, res) => {
     res.status(500).json({ ok: false, error: e.message });
   }
 });
+
 // USER: o‘z ticketini served deb belgilaydi
 app.post("/api/ticket/served", async (req, res) => {
   try {
     const { ticketId } = req.body || {};
-
-    if (!ticketId) {
-      return res.status(400).json({
-        ok: false,
-        error: "ticketId kerak"
-      });
-    }
+    if (!ticketId) return res.status(400).json({ ok: false, error: "ticketId kerak" });
 
     const client = await pool.connect();
-
     try {
-
       await client.query("BEGIN");
 
       const t = await client.query(
@@ -556,27 +558,15 @@ app.post("/api/ticket/served", async (req, res) => {
       );
 
       if (!t.rowCount) {
-
         await client.query("ROLLBACK");
-
-        return res.status(404).json({
-          ok: false,
-          error: "Ticket topilmadi"
-        });
-
+        return res.status(404).json({ ok: false, error: "Ticket topilmadi" });
       }
 
       const ticket = t.rows[0];
 
       if (ticket.status === "served") {
-
         await client.query("COMMIT");
-
-        return res.json({
-          ok: true,
-          message: "Already served"
-        });
-
+        return res.json({ ok: true, message: "Already served" });
       }
 
       await client.query(
@@ -597,13 +587,12 @@ app.post("/api/ticket/served", async (req, res) => {
       );
 
       let currentNumber = safeInt(st.rows[0]?.current_number, 0);
-
       const nextNumber = safeInt(st.rows[0]?.next_number, 1);
 
       const nowServing = currentNumber + 1;
 
+      // faqat navbati kelgan bo'lsa, current_number ni oldinga suramiz
       if (ticket.number === nowServing) {
-
         await client.query(
           `UPDATE org_state
            SET current_number=current_number+1,
@@ -611,9 +600,7 @@ app.post("/api/ticket/served", async (req, res) => {
            WHERE org_id=$1`,
           [ticket.org_id]
         );
-
         currentNumber++;
-
       }
 
       await client.query("COMMIT");
@@ -623,36 +610,28 @@ app.post("/api/ticket/served", async (req, res) => {
         served: true,
         currentNumber,
         nowServing: currentNumber + 1,
-        lastNumber: Math.max(0, nextNumber - 1)
+        lastNumber: Math.max(0, nextNumber - 1),
       });
-
-    }
-    catch (e) {
-
+    } catch (e) {
       await client.query("ROLLBACK");
-
       throw e;
-
-    }
-    finally {
-
+    } finally {
       client.release();
-
     }
-
-  }
-  catch (e) {
-
+  } catch (e) {
     console.error("POST /api/ticket/served error:", e);
-
-    res.status(500).json({
-      ok: false,
-      error: e.message
-    });
-
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
+// ✅ Frontlarda eski yo'l ishlatilsa ham ishlasin:
+app.post("/api/served", (req, res) => {
+  // aynan shu endpointni ticket.html sizda noto‘g‘ri chaqiryapti
+  // shuning uchun alias qilib qo‘ydik
+  return app._router.handle(req, res, () => {});
+});
+
+// Admin next
 app.post("/api/admin/next", async (req, res) => {
   try {
     const { orgId } = req.body || {};
@@ -728,4 +707,3 @@ initDb()
     console.error("DB init error:", e);
     process.exit(1);
   });
-
