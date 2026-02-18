@@ -252,10 +252,10 @@
                   </div>
 
                   <div class="kpiGrid">
-                    <div class="kpi"><div class="k">Oldinda</div><div class="v" id="aheadKpi">—</div></div>
-                    <div class="kpi"><div class="k">Keyinda</div><div class="v" id="behindKpi">—</div></div>
-                    <div class="kpi"><div class="k">O‘rtacha</div><div class="v" id="avgKpi">—</div></div>
-                    <div class="kpi"><div class="k">Holat</div><div class="v" id="statusKpi">—</div></div>
+                    <div class="kpi"><div class="k" id="kpiAheadLbl">Oldinda</div><div class="v" id="aheadKpi">—</div></div>
+                    <div class="kpi"><div class="k" id="kpiBehindLbl">Keyinda</div><div class="v" id="behindKpi">—</div></div>
+                    <div class="kpi"><div class="k" id="kpiAvgLbl">O‘rtacha</div><div class="v" id="avgKpi">—</div></div>
+                    <div class="kpi"><div class="k" id="kpiStatusLbl">Holat</div><div class="v" id="statusKpi">—</div></div>
                   </div>
 
                   <div id="warnBox" class="warn hidden"></div>
@@ -282,11 +282,11 @@
             <p id="howText">Til → Viloyat → Tuman/Shahar → Muassasa</p>
           </div>
           <div class="mini">
-            <h3>🔔 Bildirishnoma</h3>
+            <h3 id="notifTitle">🔔 Bildirishnoma</h3>
             <p id="notifText">Navbatingiz 10 ta qolganda avtomatik xabar beradi (browser permission kerak).</p>
           </div>
           <div class="mini">
-            <h3>📲 Telegram bot</h3>
+            <h3 id="botTitle">📲 Telegram bot</h3>
             <p id="botText">Telegram bot orqali ham navbat olishingiz mumkin.</p>
           </div>
           <div class="footer">© NAVBATUZ • Render + PostgreSQL • Web + Telegram</div>
@@ -299,10 +299,17 @@
   const API_BASE = window.location.origin;
   const $ = (id) => document.getElementById(id);
 
+  // ===== i18n =====
   const UI = {
     uz: {
       heroTitle: "Navbatni tez va oson oling.",
       heroSub: "Tilni tanlang, keyin viloyat → tuman/shahar → muassasani tanlang.",
+      lblLang: "Til",
+      lblRegion: "Viloyat",
+      lblUnit: "Tuman/Shahar",
+      lblOrg: "Muassasa",
+      lblFullName: "Ism familiya",
+      lblTicket: "Navbat",
       hintLang: "Tilni ro‘yxatdan tanlang.",
       hintRegion: "Avval tilni tanlang, keyin viloyat ro‘yxati chiqadi.",
       hintUnit: "Viloyatni tanlasangiz, tuman/shaharlar chiqadi.",
@@ -320,10 +327,39 @@
       served: "🎉 Navbatingiz keldi!",
       missed: "⚠️ Navbatingiz o‘tib ketgan. 5 ta ichida saqlanadi.",
       autoCancelled: "⛔ 5 tadan o‘tib ketdi. Avtomat bekor qilindi.",
+      btnSave: "✅ Tanlovni saqlash",
+      btnTake: "🎟 Navbat olish",
+      btnRefresh: "🔄 Yangilash",
+      btnCancel: "🗑 Bekor",
+      btnServed: "✅ Xizmat ko‘rsatildi",
+      btnOpen: "🧾 Chek (ticket)",
+      now: "Now",
+      eta: "ETA",
+      countdown: "Countdown",
+      kpiAhead: "Oldinda",
+      kpiBehind: "Keyinda",
+      kpiAvg: "O‘rtacha",
+      kpiStatus: "Holat",
+      howTitle: "⚡ Qanday ishlaydi?",
+      howText: "Til → Viloyat → Tuman/Shahar → Muassasa",
+      notifTitle: "🔔 Bildirishnoma",
+      notifText: "Navbatingiz 10 ta qolganda avtomatik xabar beradi (browser permission kerak).",
+      botTitle: "📲 Telegram bot",
+      botText: "Telegram bot orqali ham navbat olishingiz mumkin.",
+      statusWaiting: "Kutilmoqda",
+      statusNow: "Navbat sizniki",
+      statusGrace: "O‘tib ketdi (grace)",
+      statusCancelled: "Bekor qilingan",
     },
     ru: {
       heroTitle: "Получите очередь быстро и удобно.",
       heroSub: "Выберите язык, затем область → район/город → учреждение.",
+      lblLang: "Язык",
+      lblRegion: "Область",
+      lblUnit: "Район/Город",
+      lblOrg: "Организация",
+      lblFullName: "Имя Фамилия",
+      lblTicket: "Талон",
       hintLang: "Выберите язык из списка.",
       hintRegion: "Сначала выберите язык — затем появятся области.",
       hintUnit: "После выбора области появятся районы/города.",
@@ -341,10 +377,39 @@
       served: "🎉 Ваша очередь подошла!",
       missed: "⚠️ Вы пропустили. Держим в пределах 5.",
       autoCancelled: "⛔ Прошло +5. Авто-отмена.",
+      btnSave: "✅ Сохранить выбор",
+      btnTake: "🎟 Получить талон",
+      btnRefresh: "🔄 Обновить",
+      btnCancel: "🗑 Отменить",
+      btnServed: "✅ Обслужено",
+      btnOpen: "🧾 Открыть талон",
+      now: "Now",
+      eta: "ETA",
+      countdown: "Countdown",
+      kpiAhead: "Перед вами",
+      kpiBehind: "После вас",
+      kpiAvg: "Среднее",
+      kpiStatus: "Статус",
+      howTitle: "⚡ Как работает?",
+      howText: "Язык → Область → Район/Город → Организация",
+      notifTitle: "🔔 Уведомления",
+      notifText: "Когда останется 10 — покажет уведомление (нужно разрешение браузера).",
+      botTitle: "📲 Telegram бот",
+      botText: "Можно получить очередь через Telegram-бот.",
+      statusWaiting: "Ожидание",
+      statusNow: "Ваш черёд",
+      statusGrace: "Пропущен (grace)",
+      statusCancelled: "Отменён",
     },
     en: {
       heroTitle: "Get your queue fast and easily.",
       heroSub: "Pick language, then region → district/city → organization.",
+      lblLang: "Language",
+      lblRegion: "Region",
+      lblUnit: "District/City",
+      lblOrg: "Organization",
+      lblFullName: "Full name",
+      lblTicket: "Ticket",
       hintLang: "Select language.",
       hintRegion: "Choose language first, then regions appear.",
       hintUnit: "After selecting region, units appear.",
@@ -362,11 +427,34 @@
       served: "🎉 It’s your turn!",
       missed: "⚠️ Missed. Grace within next 5.",
       autoCancelled: "⛔ Passed +5. Auto-cancelled.",
+      btnSave: "✅ Save selection",
+      btnTake: "🎟 Take ticket",
+      btnRefresh: "🔄 Refresh",
+      btnCancel: "🗑 Cancel",
+      btnServed: "✅ Served",
+      btnOpen: "🧾 Open ticket",
+      now: "Now",
+      eta: "ETA",
+      countdown: "Countdown",
+      kpiAhead: "Ahead",
+      kpiBehind: "Behind",
+      kpiAvg: "Average",
+      kpiStatus: "Status",
+      howTitle: "⚡ How it works?",
+      howText: "Language → Region → District/City → Organization",
+      notifTitle: "🔔 Notifications",
+      notifText: "When 10 left, it will notify (needs browser permission).",
+      botTitle: "📲 Telegram bot",
+      botText: "You can also take a ticket via Telegram bot.",
+      statusWaiting: "Waiting",
+      statusNow: "Your turn",
+      statusGrace: "Missed (grace)",
+      statusCancelled: "Cancelled",
     }
   };
-
   function getT(lang){ return UI[lang] || UI.uz; }
 
+  // ===== helpers =====
   function toast(msg){
     const t = $("toast");
     t.textContent = msg;
@@ -395,9 +483,9 @@
   }
 
   function labelByLang(obj, lang){
-    if (lang === "ru") return obj.name_ru || obj.name_uz;
-    if (lang === "en") return obj.name_uz || obj.name_ru;
-    return obj.name_uz || obj.name_ru;
+    if (lang === "ru") return obj.name_ru || obj.name_uz || "";
+    if (lang === "en") return obj.name_uz || obj.name_ru || "";
+    return obj.name_uz || obj.name_ru || "";
   }
 
   function fmtCountdown(ms){
@@ -453,7 +541,7 @@
   let orgsByUzKey = {};
 
   const state = {
-    lang: localStorage.getItem("lang") || "uz",
+    lang: (localStorage.getItem("lang") || "uz").toLowerCase(),
     regionId: localStorage.getItem("regionId") || "",
     unitId: localStorage.getItem("unitId") || "",
     orgId: localStorage.getItem("orgId") || "",
@@ -467,6 +555,9 @@
   let pollTimer = null;
   let countdownTimer = null;
   let etaEndTs = null;
+
+  // notification state
+  let notified10 = false;
 
   function loadTicket(){
     try{
@@ -527,13 +618,54 @@
 
   function applyLang(lang){
     const t = getT(lang);
+
+    // titles/hints
     $("heroTitle").textContent = t.heroTitle;
     $("heroSub").textContent = t.heroSub;
+
+    $("lblLang").textContent = t.lblLang;
+    $("lblRegion").textContent = t.lblRegion;
+    $("lblUnit").textContent = t.lblUnit;
+    $("lblOrg").textContent = t.lblOrg;
+    $("lblFullName").textContent = t.lblFullName;
+    $("lblTicket").textContent = t.lblTicket;
+
     $("hintLang").textContent = t.hintLang;
     $("hintRegion").textContent = t.hintRegion;
     $("hintUnit").textContent = t.hintUnit;
     $("hintOrg").textContent = t.hintOrg;
     $("hintName").textContent = t.hintName;
+
+    // side
+    $("howTitle").textContent = t.howTitle;
+    $("howText").textContent = t.howText;
+    $("notifTitle").textContent = t.notifTitle;
+    $("notifText").textContent = t.notifText;
+    $("botTitle").textContent = t.botTitle;
+    $("botText").textContent = t.botText;
+
+    // buttons
+    $("saveBtn").textContent = t.btnSave;
+    $("takeBtn").textContent = t.btnTake;
+    $("refreshBtn").textContent = t.btnRefresh;
+    $("cancelBtn").textContent = t.btnCancel;
+    $("servedBtn").textContent = t.btnServed;
+    $("openTicketBtn").textContent = t.btnOpen;
+
+    // kpi labels
+    $("kpiAheadLbl").textContent = t.kpiAhead;
+    $("kpiBehindLbl").textContent = t.kpiBehind;
+    $("kpiAvgLbl").textContent = t.kpiAvg;
+    $("kpiStatusLbl").textContent = t.kpiStatus;
+
+    // placeholders
+    $("fullNameInp").placeholder =
+      (lang==="uz" ? "Masalan: Ali Valiyev" : lang==="ru" ? "Например: Ali Valiyev" : "e.g. Ali Valiyev");
+
+    // live ticket texts refresh
+    if (ticket && ticket.status === "active") {
+      fetchTicketStatus().catch(()=>{});
+    }
   }
 
   function rebuildRegions(){
@@ -651,10 +783,46 @@
   function startCountdown(){
     stopCountdown();
     countdownTimer = setInterval(()=>{
-      if (!etaEndTs) { $("countdownText").textContent = "Countdown: —"; return; }
+      const t = getT(state.lang);
+      if (!etaEndTs) { $("countdownText").textContent = `${t.countdown}: —`; return; }
       const left = etaEndTs - Date.now();
-      $("countdownText").textContent = "Countdown: " + (left <= 0 ? "00:00:00" : fmtCountdown(left));
+      $("countdownText").textContent = `${t.countdown}: ` + (left <= 0 ? "00:00:00" : fmtCountdown(left));
     }, 1000);
+  }
+
+  function stopPolling(){
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  function startPolling(){
+    stopPolling();
+    pollTimer = setInterval(()=>fetchTicketStatus().catch(()=>{}), 5000);
+  }
+
+  async function ensureNotifyPermission(){
+    if (!("Notification" in window)) return false;
+    if (Notification.permission === "granted") return true;
+    if (Notification.permission === "denied") return false;
+    try{
+      const p = await Notification.requestPermission();
+      return p === "granted";
+    }catch{ return false; }
+  }
+
+  function maybeNotifyAhead(ahead){
+    // 10 ta qolganda 1 marta notify
+    if (!Number.isFinite(ahead)) return;
+    if (ahead > 10) { notified10 = false; return; }
+    if (ahead <= 10 && !notified10) {
+      notified10 = true;
+      ensureNotifyPermission().then((ok)=>{
+        if (!ok) return;
+        const t = getT(state.lang);
+        try{
+          new Notification("NAVBATUZ", { body: t.served.replace("🎉 ","") + " (" + (ahead===0 ? "NOW" : ("left: " + ahead)) + ")" });
+        }catch{}
+      });
+    }
   }
 
   function renderTicketStatus(data){
@@ -663,47 +831,53 @@
     if (!ticket || !ticket.number) {
       setTicketUIVisible(false);
       setTicketStateBadge("—");
-      $("etaText").textContent = "ETA: —";
-      $("countdownText").textContent = "Countdown: —";
+      $("etaText").textContent = `${t.eta}: —`;
+      $("countdownText").textContent = `${t.countdown}: —`;
       stopCountdown();
       return;
     }
 
     const my = Number(ticket.number);
-    const nowServing = Number.isFinite(data?.nowServing) ? data.nowServing : null;
-    const avgSec = Number.isFinite(data?.avgServiceSec) && data.avgServiceSec > 0 ? Math.round(data.avgServiceSec) : null;
+    const nowServing = Number.isFinite(data?.nowServing) ? Number(data.nowServing) : null;
+    const avgSec = Number.isFinite(data?.avgServiceSec) && Number(data.avgServiceSec) > 0 ? Math.round(Number(data.avgServiceSec)) : null;
 
-    const lastNumber = Number.isFinite(data?.lastNumber) ? data.lastNumber : my;
+    const lastNumber = Number.isFinite(data?.lastNumber) ? Number(data.lastNumber) : my;
     const { ahead, behind } = computeAheadBehind(nowServing, lastNumber, my);
 
-    const serverStatus = data?.ticket?.status || null;
+    const serverStatus = (data?.ticket?.status || "").toLowerCase();
 
-    let uiStatus = "Waiting";
+    let uiStatus = t.statusWaiting;
     let badge = "Waiting";
     setWarn(null);
 
-    $("nowServingBadge").textContent = Number.isFinite(nowServing) ? ("Now: " + nowServing) : "Now: —";
+    $("nowServingBadge").textContent = Number.isFinite(nowServing) ? `${t.now}: ${nowServing}` : `${t.now}: —`;
 
     if (serverStatus === "cancelled") {
-      uiStatus = "Auto-cancelled"; badge = "CANCELLED";
+      uiStatus = t.statusCancelled; badge = "CANCELLED";
       setWarn(t.autoCancelled);
       ticket.status = "cancelled"; saveTicket();
       stopPolling(); updateSaveBtn();
     } else if (serverStatus === "served") {
-      uiStatus = t.served; badge = "NOW";
+      uiStatus = t.statusNow; badge = "NOW";
       setWarn(t.served);
     } else if (serverStatus === "missed") {
-      uiStatus = "Missed (grace)"; badge = "GRACE";
+      uiStatus = t.statusGrace; badge = "GRACE";
       setWarn(t.missed);
     } else {
-      if (Number.isFinite(nowServing) && my === nowServing) { uiStatus = t.served; badge = "NOW"; setWarn(t.served); }
-      else if (Number.isFinite(nowServing) && my < nowServing) {
+      // compute by numbers too
+      if (Number.isFinite(nowServing) && my === nowServing) {
+        uiStatus = t.statusNow; badge = "NOW"; setWarn(t.served);
+      } else if (Number.isFinite(nowServing) && my < nowServing) {
         const diff = nowServing - my;
-        if (diff <= 5) { uiStatus="Missed (grace)"; badge="GRACE"; setWarn(t.missed); }
-        else { uiStatus="Auto-cancelled"; badge="CANCELLED"; setWarn(t.autoCancelled); ticket.status="cancelled"; saveTicket(); stopPolling(); updateSaveBtn(); }
+        if (diff <= 5) { uiStatus = t.statusGrace; badge="GRACE"; setWarn(t.missed); }
+        else {
+          uiStatus = t.statusCancelled; badge="CANCELLED"; setWarn(t.autoCancelled);
+          ticket.status="cancelled"; saveTicket(); stopPolling(); updateSaveBtn();
+        }
       }
     }
 
+    // ETA + countdown
     let etaMin = null;
     if (avgSec && Number.isFinite(ahead)) etaMin = (ahead * avgSec) / 60;
 
@@ -716,17 +890,31 @@
       stopCountdown();
     }
 
+    // Notify logic (10 left)
+    maybeNotifyAhead(ahead);
+
     $("ticketNo").textContent = "#" + my;
-    $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${new Date(ticket.createdAt||Date.now()).toLocaleString()} • ${state.fullName}`;
+    const createdAt = ticket.createdAt ? new Date(ticket.createdAt) : new Date();
+    $("ticketMeta").textContent = `ORG: ${ticket.orgId} • ${createdAt.toLocaleString()} • ${state.fullName}`;
+
     $("aheadKpi").textContent = (ahead===null ? "—" : ahead);
     $("behindKpi").textContent = (behind===null ? "—" : behind);
     $("avgKpi").textContent = avgSec ? `${avgSec}s` : "—";
     $("statusKpi").textContent = uiStatus;
-    $("etaText").textContent = "ETA: " + (etaMin===null ? "—" : (Math.round(etaMin) + " min"));
+
+    $("etaText").textContent = `${t.eta}: ` + (etaMin===null ? "—" : (Math.round(etaMin) + " min"));
+    if (!etaEndTs) $("countdownText").textContent = `${t.countdown}: —`;
 
     setTicketStateBadge(badge);
     setTicketUIVisible(true);
     $("takeBtn").disabled = true;
+  }
+
+  async function fetchTicketStatus(){
+    if (!ticket || ticket.status !== "active") return;
+    const data = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
+    setOnlineBadge(true);
+    renderTicketStatus(data);
   }
 
   async function takeTicket(){
@@ -735,7 +923,7 @@
     if (!state.fullName || state.fullName.length < 3) {
       toast(t.needName);
       updateSaveBtn();
-      return; // ✅ bu joy FUNCTION ichida, illegal return bo‘lmaydi
+      return;
     }
 
     $("takeBtn").disabled = true;
@@ -752,10 +940,6 @@
       if (!j?.ok) throw new Error(j?.error || "take failed");
 
       const num = Number(j.number ?? j.ticket?.number);
-      const nowServing = Number(j.nowServing);
-      const lastNumber = Number(j.lastNumber);
-      const avgServiceSec = Number(j.avgServiceSec ?? null);
-
       ticket = {
         orgId: state.orgId,
         ticketId: j.ticketId ?? j.ticket?.id ?? null,
@@ -764,88 +948,83 @@
         status: "active"
       };
       saveTicket();
+      notified10 = false;
 
       toast(t.taken);
-      setOnlineBadge(true);
 
-      renderTicketStatus({ nowServing, lastNumber, avgServiceSec, ticket: j.ticket || null });
+      renderTicketStatus(j);
       startPolling();
       updateSaveBtn();
+
     }catch(e){
       console.error(e);
       setOnlineBadge(false);
       toast(t.apiFail);
       setTicketStateBadge("—");
-      updateSaveBtn();
+      $("takeBtn").disabled = false;
     }
-  }
-
-  async function fetchTicketStatus(){
-    if (!ticket?.orgId) return;
-
-    let j = null;
-    try{
-      if (ticket.ticketId) j = await apiGet(`/api/ticket/${encodeURIComponent(ticket.ticketId)}`);
-      else j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
-    }catch(e){
-      // fallback
-      j = await apiGet(`/api/ticket?orgId=${encodeURIComponent(ticket.orgId)}&number=${encodeURIComponent(ticket.number)}`);
-    }
-
-    if (!j?.ok) throw new Error(j?.error || "status fail");
-    setOnlineBadge(true);
-    renderTicketStatus(j);
-  }
-
-  function startPolling(){
-    stopPolling();
-    pollTimer = setInterval(()=> {
-      fetchTicketStatus().catch((e)=>{
-        console.error(e);
-        setOnlineBadge(false);
-      });
-    }, 5000);
-
-    fetchTicketStatus().catch((e)=>{
-      console.error(e);
-      setOnlineBadge(false);
-    });
-  }
-
-  function stopPolling(){
-    if (pollTimer) clearInterval(pollTimer);
-    pollTimer = null;
-    stopCountdown();
   }
 
   async function cancelTicket(){
     const t = getT(state.lang);
-    if (!ticket) return;
+    if (!ticket || ticket.status !== "active") return;
 
-    $("cancelBtn").disabled = true;
     try{
       await apiPost("/api/cancel", { orgId: ticket.orgId, number: ticket.number });
-    }catch{}
+    }catch(e){
+      console.error(e);
+    }
 
-    ticket.status = "cancelled";
+    ticket = null;
     saveTicket();
     stopPolling();
-
-    setTicketStateBadge("CANCELLED");
-    $("statusKpi").textContent = "Cancelled";
+    stopCountdown();
     setWarn(null);
+    setTicketUIVisible(false);
+    setTicketStateBadge("—");
+    $("etaText").textContent = `${t.eta}: —`;
+    $("countdownText").textContent = `${t.countdown}: —`;
     toast(t.cancelled);
-
-    $("cancelBtn").disabled = false;
     updateSaveBtn();
   }
 
   // ===== Events =====
   $("langSel").addEventListener("change", () => {
-    state.lang = $("langSel").value;
+    state.lang = ($("langSel").value || "uz").toLowerCase();
     localStorage.setItem("lang", state.lang);
+
     applyLang(state.lang);
-    rebuildRegions(); rebuildUnits(); rebuildOrgs();
+
+    // language changes should rebuild visible labels
+    rebuildRegions();
+    if (state.regionId) $("regionSel").value = state.regionId;
+
+    // keep selection ids, but rebuild text options based on lang
+    // units/orgs: rebuild without clearing selection if possible
+    // We'll attempt to keep current unit/org values:
+    const prevUnit = state.unitId;
+    const prevOrg = state.orgId;
+
+    // rebuild units list
+    if (state.regionId){
+      const rid = state.regionId;
+      const units = unitsByRegionId.get(String(rid)) || [];
+      const items = units.map(u => {
+        const base = labelByLang(u, state.lang);
+        const prefix = (u.kind === "city")
+          ? (state.lang==="uz" ? "Shahar: " : state.lang==="ru" ? "Город: " : "City: ")
+          : (state.lang==="uz" ? "Tuman: " : state.lang==="ru" ? "Район: " : "District: ");
+        return { value: u.id, label: prefix + base };
+      });
+      setOptions($("unitSel"), items, "—");
+      $("unitSel").disabled = false;
+      if (prevUnit) { $("unitSel").value = prevUnit; state.unitId = prevUnit; }
+    }
+
+    // rebuild orgs list
+    rebuildOrgs();
+    if (prevOrg) { $("orgSel").value = prevOrg; state.orgId = prevOrg; }
+
     updateSaveBtn();
     if (ticket && ticket.status === "active") fetchTicketStatus().catch(()=>{});
   });
@@ -859,16 +1038,25 @@
   $("regionSel").addEventListener("change", () => {
     state.regionId = $("regionSel").value;
     localStorage.setItem("regionId", state.regionId);
+
     state.unitId = ""; state.orgId = "";
-    localStorage.setItem("unitId", ""); localStorage.setItem("orgId", "");
-    rebuildUnits(); rebuildOrgs(); updateSaveBtn();
+    localStorage.setItem("unitId", "");
+    localStorage.setItem("orgId", "");
+
+    rebuildUnits();
+    rebuildOrgs();
+    updateSaveBtn();
   });
 
   $("unitSel").addEventListener("change", () => {
     state.unitId = $("unitSel").value;
     localStorage.setItem("unitId", state.unitId);
-    state.orgId = ""; localStorage.setItem("orgId", "");
-    rebuildOrgs(); updateSaveBtn();
+
+    state.orgId = "";
+    localStorage.setItem("orgId", "");
+
+    rebuildOrgs();
+    updateSaveBtn();
   });
 
   $("orgSel").addEventListener("change", () => {
@@ -883,6 +1071,7 @@
   });
 
   $("takeBtn").addEventListener("click", () => takeTicket());
+
   $("refreshBtn").addEventListener("click", () => {
     fetchTicketStatus().catch((e)=>{
       console.error(e);
@@ -890,14 +1079,16 @@
       toast(getT(state.lang).apiFail);
     });
   });
+
   $("cancelBtn").addEventListener("click", () => cancelTicket());
 
   $("servedBtn").addEventListener("click", async () => {
+    const t = getT(state.lang);
     if (!ticket?.ticketId) { toast("ticketId yo‘q"); return; }
     try{
       const j = await apiPost("/api/ticket/served", { ticketId: ticket.ticketId });
       if (!j?.ok) throw new Error(j?.error || "served error");
-      toast(getT(state.lang).servedOk);
+      toast(t.servedOk);
       fetchTicketStatus().catch(()=>{});
     }catch(e){
       console.error(e);
@@ -913,42 +1104,59 @@
   // ===== Boot =====
   (async function boot(){
     try{
+      // init UI state
       $("langSel").value = state.lang;
-      applyLang(state.lang);
       $("fullNameInp").value = state.fullName || "";
+      applyLang(state.lang);
 
+      // quick health check
       try { await apiGet("/api/health"); setOnlineBadge(true); }
       catch { setOnlineBadge(false); }
 
       await loadAllData();
 
+      // build selects
       rebuildRegions();
       if (state.regionId) $("regionSel").value = state.regionId;
 
-      if (state.regionId) {
-        // units
-        const units = unitsByRegionId.get(String(state.regionId)) || [];
+      // rebuild units + restore selected unit if still exists
+      if (state.regionId){
+        const rid = state.regionId;
+        const units = unitsByRegionId.get(String(rid)) || [];
+        const items = units.map(u => {
+          const base = labelByLang(u, state.lang);
+          const prefix = (u.kind === "city")
+            ? (state.lang==="uz" ? "Shahar: " : state.lang==="ru" ? "Город: " : "City: ")
+            : (state.lang==="uz" ? "Tuman: " : state.lang==="ru" ? "Район: " : "District: ");
+          return { value: u.id, label: prefix + base };
+        });
+        setOptions($("unitSel"), items, "—");
         $("unitSel").disabled = false;
         if (state.unitId) $("unitSel").value = state.unitId;
+      } else {
+        $("unitSel").disabled = true;
+        setOptions($("unitSel"), [], "—");
       }
-      rebuildUnits();
-      if (state.unitId) $("unitSel").value = state.unitId;
 
       rebuildOrgs();
       if (state.orgId) $("orgSel").value = state.orgId;
 
+      // ticket restore
       loadTicket();
       if (ticket && ticket.status === "active") {
         setTicketUIVisible(true);
         setTicketStateBadge("Active");
         updateSaveBtn();
+        fetchTicketStatus().catch(()=>{});
         startPolling();
       } else {
-        ticket = null; saveTicket();
+        ticket = null;
+        saveTicket();
         setTicketUIVisible(false);
         setTicketStateBadge("—");
         updateSaveBtn();
       }
+
     }catch(e){
       console.error(e);
       toast(getT(state.lang).apiFail);
