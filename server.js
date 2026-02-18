@@ -34,7 +34,6 @@ app.use((req, res, next) => {
 });
 
 // ---- CORS (ixtiyoriy) ----
-// RENDER + WEBAPP bo‘lsa: CORS_ORIGIN="https://yourdomain.com,https://another.com"
 const corsOrigin = (process.env.CORS_ORIGIN || "").trim();
 if (corsOrigin) {
   const allow = corsOrigin.split(",").map(s => s.trim()).filter(Boolean);
@@ -181,7 +180,6 @@ async function autoUpdateTicketStatusIfNeeded({ ticketId, number, nowServing }) 
 }
 
 function publicBaseUrl() {
-  // Render’da PUBLIC_URL qo‘ying: https://navbatuz.onrender.com
   return process.env.PUBLIC_URL || `http://localhost:${PORT}`;
 }
 
@@ -211,7 +209,6 @@ function requireAdmin(req, res, next) {
 // ===== ROUTES =====
 
 app.get("/api/health", async (req, res) => {
-  // DB ping ham qilamiz
   try {
     await pool.query("SELECT 1");
     res.json({ ok: true, service: "navbatuz", time: new Date().toISOString() });
@@ -326,7 +323,7 @@ app.post("/api/take", async (req, res) => {
   }
 });
 
-// Status (orgId + number) — web polling ishlatadi
+// Status (orgId + number)
 app.get("/api/ticket", async (req, res) => {
   try {
     const orgId = safeStr(req.query.orgId, "").trim();
@@ -399,7 +396,7 @@ app.get("/api/ticket", async (req, res) => {
   }
 });
 
-// Ticket by ID + QR qaytaradi (ticket.html ishlatadi)
+// Ticket by ID + QR
 app.get("/api/ticket/:id", async (req, res) => {
   try {
     const id = req.params.id;
@@ -498,7 +495,7 @@ app.post("/api/cancel", async (req, res) => {
   }
 });
 
-// USER: o‘z ticketini served deb belgilaydi
+// USER: served
 app.post("/api/ticket/served", async (req, res) => {
   try {
     const { ticketId } = req.body || {};
@@ -547,7 +544,6 @@ app.post("/api/ticket/served", async (req, res) => {
 
       const nowServing = currentNumber + 1;
 
-      // agar ayni navbat served bo‘lsa, org_state ni oldinga suramiz
       if (ticket.number === nowServing) {
         await client.query(
           `UPDATE org_state
@@ -686,8 +682,79 @@ app.post("/api/admin/deleteAll", requireAdmin, async (req, res) => {
   }
 });
 
-// ADMIN: next (org_state current_number++)
-// (admin panelingiz bo‘lsa ishlatasiz)
+// =======================
+// ADMIN: skip one ticket (mark missed, and if it is nowServing -> advance)
+// POST /api/admin/skip { orgId, ticketId }
+// =======================
+app.post("/api/admin/skip", requireAdmin, async (req, res) => {
+  try {
+    const { orgId, ticketId } = req.body || {};
+    const org = safeStr(orgId, "").trim();
+    const id = safeStr(ticketId, "").trim();
+
+    if (!org) return res.status(400).json({ ok: false, error: "orgId kerak" });
+    if (!id) return res.status(400).json({ ok: false, error: "ticketId kerak" });
+
+    await ensureOrgState(org);
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const t = await client.query(
+        `SELECT id, org_id, number, status
+         FROM tickets
+         WHERE id=$1 AND org_id=$2
+         FOR UPDATE`,
+        [id, org]
+      );
+
+      if (!t.rowCount) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ ok: false, error: "Ticket topilmadi" });
+      }
+
+      const ticket = t.rows[0];
+
+      if (ticket.status === "waiting") {
+        await client.query(
+          `UPDATE tickets SET status='missed', updated_at=now()
+           WHERE id=$1`,
+          [id]
+        );
+      }
+
+      const st = await client.query(
+        `SELECT current_number FROM org_state WHERE org_id=$1 FOR UPDATE`,
+        [org]
+      );
+      const currentNumber = safeInt(st.rows[0]?.current_number, 0);
+      const nowServing = currentNumber + 1;
+
+      if (safeInt(ticket.number, 0) === nowServing) {
+        await client.query(
+          `UPDATE org_state
+           SET current_number=current_number+1, updated_at=now()
+           WHERE org_id=$1`,
+          [org]
+        );
+      }
+
+      await client.query("COMMIT");
+      return res.json({ ok: true, skipped: true });
+    } catch (e) {
+      await client.query("ROLLBACK");
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (e) {
+    console.error("POST /api/admin/skip error:", e);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// ADMIN: next
 app.post("/api/admin/next", requireAdmin, async (req, res) => {
   try {
     const { orgId } = req.body || {};
@@ -737,7 +804,7 @@ app.post("/api/admin/next", requireAdmin, async (req, res) => {
   }
 });
 
-// ADMIN: reset org (danger)
+// ADMIN: reset
 app.post("/api/admin/reset", requireAdmin, async (req, res) => {
   try {
     const { orgId } = req.body || {};
@@ -760,7 +827,7 @@ app.post("/api/admin/reset", requireAdmin, async (req, res) => {
   }
 });
 
-// Fallback: SPA not needed; index.html already in public
+// Fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
