@@ -191,12 +191,42 @@
   }
 
   function downloadCanvasJpg(){
-    const c = document.getElementById("ticketCanvas");
-    const a = document.createElement("a");
-    a.download = `ticket_${id || "unknown"}.jpg`;
-    a.href = c.toDataURL("image/jpeg", 0.95);
-    a.click();
-  }
+  const c = document.getElementById("ticketCanvas");
+  if (!c) return;
+
+  const dataUrl = c.toDataURL("image/jpeg", 0.95);
+  const fileName = `ticket_${id || "unknown"}.jpg`;
+
+  // ✅ 1) Android/WebView uchun: DOM'ga qo‘shib keyin click
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = fileName;
+  a.target = "_blank";
+  a.rel = "noopener";
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  // ✅ 2) Samsung/WebView’da download ishlamasa — fallback:
+  // rasmni yangi oynada ochib beradi, user "Save image" qiladi
+  setTimeout(() => {
+    try {
+      // agar yuqoridagisi ishlamasa, rasmni ochib beramiz
+      const w = window.open();
+      if (w) {
+        w.document.write(`<title>${fileName}</title>`);
+        w.document.write(`<img src="${dataUrl}" style="width:100%;height:auto" />`);
+        w.document.close();
+      } else {
+        // popup blok bo‘lsa — shu oynada ochamiz
+        window.location.href = dataUrl;
+      }
+    } catch (e) {
+      window.location.href = dataUrl;
+    }
+  }, 250);
+}
 
   async function load(){
     if (!id){
